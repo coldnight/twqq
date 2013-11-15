@@ -132,6 +132,11 @@ class RequestHub(object):
         with open(self._wait_path, 'w'):
             pass
 
+    def is_lock(self):
+        return os.path.exists(self._lock_path)
+
+    def is_wait(self):
+        return os.path.exists(self._wait_path)
 
     def run_daemon(self, func, *args, **kwargs):
         pass
@@ -238,7 +243,7 @@ class RequestHub(object):
 
             funcs = self.client.request_handlers.get(check_request(request), [])
             for f in funcs:
-                f(resp, data)
+                f(request, resp, data)
 
         return _wrap
 

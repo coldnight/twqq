@@ -18,12 +18,6 @@ import tornado.log
 
 import const
 
-
-try:
-    raw_input
-except NameError:  #py3
-    raw_input = input
-
 tornado.log.enable_pretty_logging()
 logger = logging.getLogger("twqq")
 
@@ -135,6 +129,13 @@ class BeforeLoginRequest(WebQQRequest):
 
     def ptuiCB(self, scode, r, url, status, msg, nickname = None):
         """ 模拟JS登录之前的回调, 保存昵称 """
+        return scode, r, url, status, msg, nickname
+
+    def get_back_args(self, data):
+        blogin_data = data.decode("utf-8").strip().rstrip(";")
+        return eval("self." + blogin_data)
+
+    def check(self, scode, r, url, status, msg, nickname = None):
         if int(scode) == 0:
             logger.info("从Cookie中获取ptwebqq的值")
             old_value = self.hub.ptwebqq
@@ -145,10 +146,6 @@ class BeforeLoginRequest(WebQQRequest):
                 self.hub.ptwebqq = old_value
         elif int(scode) == 4:
             logger.error(msg)
-            # TODO
-            # if self.status_callback:
-            #     self.status_callback(False, msg)
-            # self.check()
             return False, self.hub.load_next_request(CheckRequest())
         else:
             logger.error(u"server response: {0}".format(msg.decode('utf-8')))
@@ -161,10 +158,11 @@ class BeforeLoginRequest(WebQQRequest):
 
     def callback(self, resp, data):
         if not data:
-            logger.error("没有数据返回, 登录失败")
-            return
-        blogin_data = resp.body.decode("utf-8").strip().rstrip(";")
-        r, url = eval("self." + blogin_data)
+            logger.error("没有数据返回, 登录失败, 尝试重新登录")
+            return self.hub.load_next_request(CheckRequest())
+
+        args = self.get_back_args(resp.body)
+        r, url = self.check(*args)
         if r:
             logger.info("检查完毕")
             self.hub.load_next_request(LoginRequest(url))
@@ -662,6 +660,7 @@ def register_request_handler(request):
     """ 返回一个装饰器, 用于装饰函数,注册为Request的处理函数
     处理函数需接收两个参数:
 
+        request         本次请求的实例
         response        相应 ~tornado.httpclient.HTTPResponse instance
         data            response.body or dict
 
