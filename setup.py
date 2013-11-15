@@ -6,7 +6,7 @@
 #   Date    :   13/09/05 11:16:58
 #   Desc    :
 #
-import windmvc
+import twqq
 from setuptools import setup
 
 requires = ["tornado", "pycurl", "tornadohttpclient"]
@@ -19,7 +19,7 @@ entry_points = {
 
 setup(
     name = "twqq",
-    version = windmvc.__version__,
+    version = twqq.__version__,
     description = 'A asynchronous webqq client library based on tornado',
     long_description = open("README.rst").read(),
     author = 'cold',
