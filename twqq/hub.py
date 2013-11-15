@@ -76,7 +76,7 @@ class RequestHub(object):
 
 
     def load_next_request(self, request):
-        self.client.load_request(request)
+        return self.client.load_request(request)
 
 
     def setup_handler(self, r, vcode, uin, next_request):
@@ -277,8 +277,9 @@ class RequestHub(object):
 
         :param to_uin: 消息接收人
         :param content: 消息内容
+        :rtype: Request instance
         """
-        self.load_next_request(SessMsgRequest(to_uin, content))
+        return self.load_next_request(SessMsgRequest(to_uin, content))
 
 
     def send_group_msg(self, group_uin, content):
@@ -286,8 +287,9 @@ class RequestHub(object):
 
         :param group_uin: 组的uin
         :param content: 消息内容
+        :rtype: Request instance
         """
-        self.load_next_request(GroupMsgRequest(group_uin, content))
+        return self.load_next_request(GroupMsgRequest(group_uin, content))
 
 
     def send_buddy_msg(self, to_uin, content):
@@ -295,8 +297,21 @@ class RequestHub(object):
 
         :param to_uin: 消息接收人
         :param content: 消息内容
+        :rtype: Request instance
         """
-        self.load_next_request(BuddyMsgRequest(to_uin, content))
+        return self.load_next_request(BuddyMsgRequest(to_uin, content))
+
+    def send_msg_with_markname(self, markname, content):
+        """ 使用备注名发送消息
+
+        :param markname: 备注名
+        :param content: 消息内容
+        :rtype: None or Request instance
+        """
+        uin = self.mark_to_uin.get(markname)
+        if not uin:
+            return
+        return self.send_buddy_msg(uin, content)
 
     def accept_verify(self, uin, account, markname = ""):
         """ 同意验证请求
@@ -305,4 +320,4 @@ class RequestHub(object):
         :param account: 请求人账号
         :param markname: 添加后的备注
         """
-        self.load_next_request(AcceptVerifyRequest(uin, account, markname))
+        return self.load_next_request(AcceptVerifyRequest(uin, account, markname))

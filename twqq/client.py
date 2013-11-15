@@ -64,6 +64,8 @@ class WebQQClient(object):
             with ExceptionStackContext(request.handle_exc):
                 func(request.url, request.params, **kwargs)
 
+        return request
+
 
     @abstractmethod
     def handle_verify_code(self, path, r, uin):
