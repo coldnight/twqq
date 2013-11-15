@@ -526,7 +526,7 @@ class AcceptVerifyRequest(WebQQRequest):
         self.uin = uin
         self.qq_num = qq_num
         self.markname = markname
-        self.params = [("r","{\"account\":%d, \"gid\":0, \"mname\":\"%d\","
+        self.params = [("r","{\"account\":%d, \"gid\":0, \"mname\":\"%s\","
                     " \"vfwebqq\":\"%s\"}" % (qq_num, markname, self.hub.vfwebqq)),]
         self.headers.update(Origin = const.S_ORIGIN)
         self.headers.update(Referer = const.S_REFERER)
@@ -535,7 +535,8 @@ class AcceptVerifyRequest(WebQQRequest):
     def callback(self, resp, data):
         if data.get("retcode") == 0:
             logger.info(u"添加 {0} 成功".format(self.qq_num))
-            self.hub.mark_to_uin[self.uin] = self.qq_num
+            if self.markname:
+                self.hub.mark_to_uin[self.markname] = self.uin
         else:
             logger.info(u"添加 {0} 失败".format(self.qq_num))
 
