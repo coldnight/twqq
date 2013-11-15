@@ -21,7 +21,7 @@ logger = logging.getLogger("client")
 
 class Client(WebQQClient):
     def handle_verify_code(self, path, r, uin):
-        logger.info(u"验证码本地路径为: {0}".format(self.path))
+        logger.info(u"验证码本地路径为: {0}".format(path))
         check_code = None
         while not check_code:
             check_code = raw_input("输入验证码: ")
