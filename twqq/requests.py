@@ -106,6 +106,7 @@ class VerifyCodeRequest(WebQQRequest):
         self.hub.require_check_time = time.time()
         with open(self.hub.checkimg_path, 'wb') as f:
             f.write(resp.body)
+        self.hub.unwait()
 
         self.hub.client.handle_verify_code(self.hub.checkimg_path, self.r, self.uin)
 
@@ -207,16 +208,10 @@ class Login2Request(WebQQRequest):
         self.hub.require_check_time = None
         if not resp.body:
             logger.error(u"没有获取到数据, 登录失败")
-            # if self.status_callback:
-            #     self.status_callback(False, "登录失败 没有数据返回")
-            #TODO return self.check()
+            self.hub.load_next_request(FirstRequest())
             return
 
         if data.get("retcode") != 0:
-            # TODO
-            # if self.status_callback:
-            #     self.status_callback(False, "登录失败 {0}".format(data))
-
             logger.error("登录失败 {0!r}".format(data))
             return
         self.hub.vfwebqq = data.get("result", {}).get("vfwebqq")
@@ -238,15 +233,10 @@ class FriendInfoRequest(WebQQRequest):
         self.headers.update(Referer = const.S_REFERER)
 
     def callback(self, resp, data):
-        # TODO
-        # if not resp.body:
-        #     if self.status_callback and call_status:
-        #         self.status_callback(False, u"更新好友信息失败")
-        #     return
-        # if data.get("retcode") != 0 and call_status:
-        #     self.status_callback(False, u"好友列表加载失败, 错误代码:{0}"
-        #                             .format(data.get("retcode")))
-        #     return
+        if not resp.body:
+            return self.hub.load_next_request(FirstRequest())
+        if data.get("retcode") != 0:
+            return self.hub.load_next_request(FirstRequest())
 
         lst = data.get("result", {}).get("info", [])
         for info in lst:
