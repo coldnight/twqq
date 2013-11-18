@@ -155,7 +155,7 @@ class RequestHub(object):
 
 
     def clean(self):
-        """ 清楚锁住和等待装袋
+        """ 清除锁住和等待状态
         """
         self.unlock()
         self.unwait()
