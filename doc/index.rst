@@ -1,5 +1,5 @@
 .. twqq documentation master file, created by
-   sphinx-quickstart on Fri Nov 15 10:46:32 2013.
+   sphinx-quickstart on Mon Nov 18 11:45:01 2013.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 

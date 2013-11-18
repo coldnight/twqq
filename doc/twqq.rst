@@ -1,6 +1,14 @@
 twqq Package
 ============
 
+:mod:`twqq` Package
+-------------------
+
+.. automodule:: twqq.__init__
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`_hash` Module
 -------------------
 
@@ -41,8 +49,3 @@ twqq Package
     :undoc-members:
     :show-inheritance:
 
-WebQQ API
----------
-.. toctree::
-    
-    webqq_api_document.rst
