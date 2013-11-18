@@ -144,7 +144,7 @@ class BeforeLoginRequest(WebQQRequest):
             logger.info("从Cookie中获取ptwebqq的值")
             old_value = self.hub.ptwebqq
             try:
-                self.hub.ptwebqq = self.hub.client.http.cookie['.qq.com']['/']['ptwebqq'].value
+                self.hub.ptwebqq = self.hub.http.cookie['.qq.com']['/']['ptwebqq'].value
             except:
                 logger.error("从Cookie中获取ptwebqq的值失败, 使用旧值尝试")
                 self.hub.ptwebqq = old_value
@@ -213,6 +213,7 @@ class Login2Request(WebQQRequest):
 
         if data.get("retcode") != 0:
             logger.error("登录失败 {0!r}".format(data))
+            self.hub.load_next_request(FirstRequest())
             return
         self.hub.vfwebqq = data.get("result", {}).get("vfwebqq")
         self.hub.psessionid = data.get("result", {}).get("psessionid")
