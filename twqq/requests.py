@@ -355,10 +355,6 @@ class PollMessageRequest(WebQQRequest):
             if not data:
                 return
             logger.info(u"获取消息: {0!r}".format(data))
-            if data.get('retcode') == 116 and data.get("p"):
-                logger.info("检测需要更新ptwebqq的值, 替换: {0} 为 {1}"
-                            .format(self.hub.ptwebqq, data.get("p")))
-                self.hub.ptwebqq = data.get("p")
             self.hub.dispatch(data)
         except Exception as e:
             logger.error(u"消息获取异常: {0}".format(e), exc_info = True)
