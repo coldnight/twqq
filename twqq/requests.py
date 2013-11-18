@@ -13,12 +13,8 @@ import random
 import inspect
 import logging
 
-
-import tornado.log
-
 import const
 
-tornado.log.enable_pretty_logging()
 logger = logging.getLogger("twqq")
 
 class WebQQRequest(object):

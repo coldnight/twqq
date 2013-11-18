@@ -53,7 +53,10 @@ class Client(WebQQClient):
 
 if __name__ == "__main__":
     import sys
-    twqqLogger = logging.getLogger("twqq")
-    twqqLogger.setLevel(logging.DEBUG)
+    import tornado.log
+
+    tornado.log.enable_pretty_logging()
+
+
     webqq = Client(sys.argv[1], sys.argv[2])
     webqq.run()
