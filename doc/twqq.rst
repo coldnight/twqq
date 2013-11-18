@@ -49,3 +49,9 @@ twqq Package
     :undoc-members:
     :show-inheritance:
 
+
+WebQQ API
+---------
+.. toctree::
+    
+    webqq_api_document.rst
