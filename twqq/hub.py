@@ -9,6 +9,7 @@
 import re
 import os
 import time
+import copy
 import json
 import random
 import urllib2
@@ -20,20 +21,34 @@ import _hash
 
 from hashlib import md5
 
+from tornado.stack_context import ExceptionStackContext
 from tornadohttpclient import UploadForm as Form
+from tornadohttpclient import TornadoHTTPClient
 
 from .requests import check_request, AcceptVerifyRequest
 from .requests import WebQQRequest, PollMessageRequest, HeartbeatRequest
 from .requests import SessMsgRequest, BuddyMsgRequest, GroupMsgRequest
+from .requests import FirstRequest
 
 logger = logging.getLogger("twqq")
 
 class RequestHub(object):
+    """ 集成Request请求和保存请求值
+    :param qid: qq号
+    :param pwd: 密码
+    :param client: ~twqq.client.Client instance
+    """
     SIG_RE = re.compile(r'var g_login_sig=encodeURIComponent\("(.*?)"\);')
     def __init__(self, qid, pwd, client = None):
+        self.http = TornadoHTTPClient()
+        self.http.set_user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 Chrome/28.0.1500.71 Safari/537.36")
+        self.http.validate_cert = False
+        self.http.set_global_headers({"Accept-Charset": "UTF-8,*;q=0.5"})
+
         self.qid = qid
         self.__pwd = pwd
         self.client = client
+
         self.rc = random.randrange(0, 100)
         self.aid = 1003903                                    # aid 固定
         self.clientid = random.randrange(11111111, 99999999)  # 客户端id 随机固定
@@ -73,18 +88,31 @@ class RequestHub(object):
         self.last_msg_content = None
         self.last_msg_numbers = 0    # 剩余位发送的消息数量
         WebQQRequest.hub = self
-
+        self.load_next_request(FirstRequest())
 
     def load_next_request(self, request):
-        return self.client.load_request(request)
+        """ 加载下一个请求
 
+        :param request: ~twqq.requests.WebQQRequest instance
+        :rtype: ~twqq.requests.WebQQRequest instance
+        """
+        func = self.http.get if request.method == WebQQRequest.METHOD_GET \
+                else self.http.post
 
-    def setup_handler(self, r, vcode, uin, next_request):
-        self.handler.r = r
-        self.handler.vcode = vcode
-        self.handler.uin = uin
-        #TODO
-        self.handler.next_request = next_request
+        kwargs = copy.deepcopy(request.kwargs)
+        callback = request.callback if hasattr(request, "callback") and\
+                callable(request.callback) else None
+        kwargs.update(callback = self.wrap(request, callback))
+        kwargs.update(headers = request.headers)
+        kwargs.update(delay = request.delay)
+        logger.debug("KWARGS: {0}".format(kwargs))
+
+        if request.ready:
+            with ExceptionStackContext(request.handle_exc):
+                func(request.url, request.params, **kwargs)
+
+        return request
+
 
     def handle_pwd(self, r, vcode, huin):
         """ 根据检查返回结果,调用回调生成密码和保存验证码 """
@@ -113,43 +141,56 @@ class RequestHub(object):
 
 
     def lock(self):
+        """ 当输入验证码时锁住
+        """
         with open(self._lock_path, 'w'):
             pass
 
 
     def unlock(self):
+        """ 解锁
+        """
         if os.path.exists(self._lock_path):
             os.remove(self._lock_path)
 
 
     def clean(self):
+        """ 清楚锁住和等待装袋
+        """
         self.unlock()
         self.unwait()
 
     def wait(self):
+        """ 当没有验证是否需要验证码时等待
+        """
         with open(self._wait_path, 'w'):
             pass
 
     def unwait(self):
+        """ 解除等待状态
+        """
         if os.path.exists(self._wait_path):
             os.remove(self._wait_path)
 
     def is_lock(self):
+        """ 检测是否被锁住
+        """
         return os.path.exists(self._lock_path)
 
     def is_wait(self):
+        """ 检测是否在等待生成验证码
+        """
         return os.path.exists(self._wait_path)
-
-    def run_daemon(self, func, *args, **kwargs):
-        pass
 
 
     def _hash(self):
-        """  获取列表时的Hash """
+        """  获取好友列表时的Hash """
         return _hash.webqq_hash(self.qid, self.ptwebqq)
 
 
     def start_poll(self):
+        """ 开始心跳和拉取信息
+        """
         if not self.poll_and_heart:
             self.login_time = time.time()
             logger.info("开始拉取信息和心跳")
@@ -161,6 +202,8 @@ class RequestHub(object):
 
 
     def _heartbeat(self):
+        """ 放入线程的产生心跳
+        """
         assert not isinstance(threading.currentThread(), threading._MainThread)
         while 1:
             try:
@@ -172,13 +215,23 @@ class RequestHub(object):
 
 
     def make_msg_content(self, content):
-        """ 构造QQ消息的内容 """
+        """ 构造QQ消息的内容
+
+        :param content: 小心内容
+        :type content: str
+        :rtype: str
+        """
         self.msg_id += 1
         return json.dumps([content, ["font", {"name":"Monospace", "size":10,
                                    "style":[0, 0, 0], "color":"000000"}]])
 
 
     def get_delay(self, content):
+        """ 根据消息内容是否和上一条内容相同和未送出的消息数目产生延迟
+
+        :param content: 消息内容
+        :rtype: tuple(delay, number)
+        """
         MIN = self.message_interval
         delay = 0
         sub = time.time() - self.last_msg_time
@@ -219,6 +272,8 @@ class RequestHub(object):
 
     def consume_delay(self, number):
         """ 消费延迟
+
+        :param number: 消费的消息数目
         """
         self.last_msg_numbers -= number
         self.last_msg_time = time.time()
@@ -226,12 +281,17 @@ class RequestHub(object):
 
     def get_group_id(self, uin):
         """ 根据组uin获取组的id
+
+        :param uin: 组的uin
         """
         return self.group_info.get(uin, {}).get("gid")
 
 
     def wrap(self, request, func = None):
         """ 装饰callback
+
+        :param request: ~twqq.requests.WebQQRequest instance
+        :param func: 回调函数
         """
         def _wrap(resp, *args, **kwargs):
             data = resp.body
@@ -254,6 +314,11 @@ class RequestHub(object):
 
 
     def handle_qq_msg_contents(self, contents):
+        """ 处理QQ消息内容
+
+        :param contents: 内容
+        :type contents: list
+        """
         content = ""
         for row in contents:
             if isinstance(row, (str, unicode)):
@@ -266,10 +331,19 @@ class RequestHub(object):
 
 
     def get_group_member_nick(self, gcode, uin):
+        """ 根据组代码和用户uin获取群成员昵称
+
+        :param gcode: 组代码
+        :param uin: 群成员uin
+        """
         return self.group_members_info.get(gcode, {}).get(uin, {}).get("nick")
 
 
     def dispatch(self, qq_source):
+        """ 调度QQ消息
+
+        :param qq_source: 源消息包
+        """
         if qq_source.get("retcode") == 0:
             messages = qq_source.get("result")
             for m in messages:

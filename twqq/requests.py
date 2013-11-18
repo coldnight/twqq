@@ -106,7 +106,6 @@ class VerifyCodeRequest(WebQQRequest):
         self.hub.require_check_time = time.time()
         with open(self.hub.checkimg_path, 'wb') as f:
             f.write(resp.body)
-        self.hub.unwait()
 
         self.hub.client.handle_verify_code(self.hub.checkimg_path, self.r, self.uin)
 
@@ -116,6 +115,7 @@ class BeforeLoginRequest(WebQQRequest):
     """
     url = "https://ssl.ptlogin2.qq.com/login"
     def init(self, password):
+        self.hub.unwait()
         self.hub.lock()
         self.params = [("u",self.hub.qid), ("p",password),
                        ("verifycode", self.hub.check_code),
@@ -140,7 +140,6 @@ class BeforeLoginRequest(WebQQRequest):
     def check(self, scode, r, url, status, msg, nickname = None):
         self.hub.unlock()
         if int(scode) == 0:
-            self.hub.wait()
             logger.info("从Cookie中获取ptwebqq的值")
             old_value = self.hub.ptwebqq
             try:

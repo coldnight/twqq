@@ -6,17 +6,14 @@
 #   Date    :   13/11/12 14:55:02
 #   Desc    :
 #
-import copy
 import inspect
 import logging
 
 from abc import abstractmethod
-from tornado.stack_context import ExceptionStackContext
-from tornadohttpclient import TornadoHTTPClient
 
-from hub import RequestHub
-from requests import FirstRequest, WebQQRequest, BeforeLoginRequest
-from requests import (group_message_handler, buddy_message_handler,
+from .hub import RequestHub
+from .requests import FirstRequest, WebQQRequest, BeforeLoginRequest
+from .requests import (group_message_handler, buddy_message_handler,
                       kick_message_handler, sess_message_handler,
                       system_message_handler)
 
@@ -28,44 +25,10 @@ class WebQQClient(object):
     :param pwd: 密码
     """
     def __init__(self, qq, pwd):
-
-        self.http = TornadoHTTPClient()
-        self.http.set_user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 Chrome/28.0.1500.71 Safari/537.36")
-        self.http.validate_cert = False
-        self.http.set_global_headers({"Accept-Charset": "UTF-8,*;q=0.5"})
-
-        # self.msg_disp = MessageDispatch(self)
+                # self.msg_disp = MessageDispatch(self)
         self.setup_msg_handlers()
         self.setup_request_handlers()
         self.hub = RequestHub(qq, pwd, self)
-        self.load_request(FirstRequest())
-
-    def set_trace(self):
-        """ 查看HTTP包的详细信息
-        """
-        self.http.debug = True
-
-    def untrace(self):
-        self.http.debug = False
-
-
-    def load_request(self, request):
-        func = self.http.get if request.method == WebQQRequest.METHOD_GET \
-                else self.http.post
-
-        kwargs = copy.deepcopy(request.kwargs)
-        callback = request.callback if hasattr(request, "callback") and\
-                callable(request.callback) else None
-        kwargs.update(callback = self.hub.wrap(request, callback))
-        kwargs.update(headers = request.headers)
-        kwargs.update(delay = request.delay)
-        logger.debug("KWARGS: {0}".format(kwargs))
-
-        if request.ready:
-            with ExceptionStackContext(request.handle_exc):
-                func(request.url, request.params, **kwargs)
-
-        return request
 
 
     @abstractmethod
@@ -91,7 +54,13 @@ class WebQQClient(object):
     @group_message_handler
     def log_group_message(self, member_nick, content, group_code,
                              send_uin, source):
-        """ 处理群消息
+        """ 对群消息进行日志记录
+
+        :param member_nick: 群昵称
+        :param content: 消息内容
+        :param group_code:组代码
+        :param send_uin: 发送人的uin
+        :param source: 消息原包
         """
         logger.info(u"获取{0} 群的{1} 发送消息: {2}"
                     .format(group_code, member_nick, content))
@@ -99,7 +68,11 @@ class WebQQClient(object):
 
     @buddy_message_handler
     def log_buddy_message(self, from_uin, content, source):
-        """ 处理好友消息
+        """ 对好友消息进行日志记录
+
+        :param from_uin: 发送人uin
+        :param content: 内容
+        :param source: 消息原包
         """
         logger.info(u"获取 {0} 发送的好友消息: {1}"
                      .format(from_uin, content))
@@ -107,27 +80,34 @@ class WebQQClient(object):
 
     @sess_message_handler
     def log_sess_message(self, from_uin, content, source):
-        """ 处理临时消息
+        """ 记录临时消息日志
+
+        :param from_uin: 发送人uin
+        :param content: 内容
+        :param source: 消息原包
         """
         logger.info(u"获取 {0} 发送的临时消息: {1}"
                      .format(from_uin, content))
 
     @kick_message_handler
     def log_kick_message(self, message):
-        """ 处理被T除的消息
+        """ 被T除的消息
         """
         logger.info(u"其他地方登录了此QQ{0}".format(message))
 
 
     @system_message_handler
     def log_system_message(self, typ, from_uin, account, source):
-        """ 处理系统消息
+        """ 记录系统消息日志
         """
         logger.info("系统消息: 类型:{0}, 发送人:{1}, 发送账号:{2}, 源:{3}"
                      .format(type, from_uin, account, source))
 
 
     def setup_msg_handlers(self):
+        """ 获取消息处理器, 获取被 twqq.requests.*_message_handler装饰的成员函数
+
+        """
         msg_handlers = {}
         for _, handler in inspect.getmembers(self, callable):
             if not hasattr(handler, "_twqq_msg_type"):
@@ -142,6 +122,8 @@ class WebQQClient(object):
 
 
     def setup_request_handlers(self):
+        """ 获取请求处理器(被twqq.reqeusts.register_request_handler 装饰的函数)
+        """
         request_handlers = {}
         for _, handler in inspect.getmembers(self, callable):
             if not hasattr(handler, "_twqq_request"):
@@ -156,4 +138,4 @@ class WebQQClient(object):
 
 
     def run(self):
-        self.http.start()
+        self.hub.http.start()
