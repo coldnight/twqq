@@ -59,6 +59,7 @@ class WebQQClient(object):
         kwargs.update(callback = self.hub.wrap(request, callback))
         kwargs.update(headers = request.headers)
         kwargs.update(delay = request.delay)
+        logger.debug("KWARGS: {0}".format(kwargs))
 
         if request.ready:
             with ExceptionStackContext(request.handle_exc):

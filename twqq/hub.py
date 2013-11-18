@@ -124,13 +124,15 @@ class RequestHub(object):
 
     def clean(self):
         self.unlock()
-        if os.path.exists(self._wait_path):
-            os.remove(self._wait_path)
-
+        self.unwait()
 
     def wait(self):
         with open(self._wait_path, 'w'):
             pass
+
+    def unwait(self):
+        if os.path.exists(self._wait_path):
+            os.remove(self._wait_path)
 
     def is_lock(self):
         return os.path.exists(self._lock_path)
@@ -161,7 +163,10 @@ class RequestHub(object):
     def _heartbeat(self):
         assert not isinstance(threading.currentThread(), threading._MainThread)
         while 1:
-            self.load_next_request(HeartbeatRequest())
+            try:
+                self.load_next_request(HeartbeatRequest())
+            except:
+                pass
             time.sleep(60)
 
 

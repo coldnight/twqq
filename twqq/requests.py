@@ -46,6 +46,7 @@ class LoginSigRequest(WebQQRequest):
     url = "https://ui.ptlogin2.qq.com/cgi-bin/login"
 
     def init(self):
+        self.hub.wait()
         logger.info("获取 login_sig...")
         self.params = [("daid", self.hub.daid), ("target", "self"), ("style", 5),
                   ("mibao_css", "m_webqq"), ("appid", self.hub.aid),
@@ -56,6 +57,10 @@ class LoginSigRequest(WebQQRequest):
                   ("t", "20130723001")]
 
     def callback(self, resp, data):
+        if not data:
+            logger.warn(u"没有获取到 Login Sig, 重新获取")
+            return self.hub.load_next_request(self)
+
         sigs = self.hub.SIG_RE.findall(resp.body)
         if len(sigs) == 1:
             self.hub.login_sig = sigs[0]
@@ -82,10 +87,10 @@ class CheckRequest(WebQQRequest):
         r, vcode, uin = eval("self.hub."+data.strip().rstrip(";"))
         logger.debug("R:{0} vcode:{1}".format(r, vcode))
         if int(r) == 0:
+            self.hub.clean()
             logger.info("验证码检查完毕, 不需要验证码")
             password = self.hub.handle_pwd(r, vcode, uin)
             self.hub.check_code = vcode
-            self.hub.clean()
             self.hub.load_next_request(BeforeLoginRequest(password))
         else:
             logger.warn("验证码检查完毕, 需要验证码")
@@ -105,6 +110,7 @@ class VerifyCodeRequest(WebQQRequest):
         self.hub.require_check_time = time.time()
         with open(self.hub.checkimg_path, 'wb') as f:
             f.write(resp.body)
+        self.hub.unwait()
 
         self.hub.client.handle_verify_code(self.hub.checkimg_path, self.r, self.uin)
 
@@ -136,7 +142,9 @@ class BeforeLoginRequest(WebQQRequest):
         return eval("self." + blogin_data)
 
     def check(self, scode, r, url, status, msg, nickname = None):
+        self.hub.unlock()
         if int(scode) == 0:
+            self.hub.wait()
             logger.info("从Cookie中获取ptwebqq的值")
             old_value = self.hub.ptwebqq
             try:
@@ -177,7 +185,6 @@ class LoginRequest(WebQQRequest):
         self.headers.update(Referer = const.LOGIN_REFERER)
 
     def callback(self, resp, data):
-        self.hub.unlock()
         if os.path.exists(self.hub.checkimg_path):
             os.remove(self.hub.checkimg_path)
 
@@ -331,7 +338,7 @@ class HeartbeatRequest(WebQQRequest):
     """ 心跳请求
     """
     url = "http://web.qq.com/web2/get_msg_tip"
-    kwargs = dict(request_timeout = 1.0, connect_timeout = 1.0)
+    kwargs = dict(request_timeout = 0.5, connect_timeout = 0.5)
     def init(self):
         self.params = dict([("uin", ""), ("tp", 1), ("id", 0), ("retype", 1),
                         ("rc", self.hub.rc), ("lv", 3), ("t", int(time.time() * 1000))])
@@ -361,9 +368,6 @@ class PollMessageRequest(WebQQRequest):
         try:
             if not data:
                 return
-            if data.get("retcode") in [121, 100006]:
-                logger.error(u"获取消息异常 {0!r}".format(data))
-                exit()
             logger.info(u"获取消息: {0!r}".format(data))
             self.hub.dispatch(data)
         except Exception as e:

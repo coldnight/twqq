@@ -14,7 +14,8 @@ import logging
 
 from twqq.client import WebQQClient
 from twqq.requests import system_message_handler, group_message_handler
-from twqq.requests import buddy_message_handler
+from twqq.requests import buddy_message_handler, register_request_handler
+from twqq.requests import PollMessageRequest
 
 
 logger = logging.getLogger("client")
@@ -41,6 +42,13 @@ class Client(WebQQClient):
     @buddy_message_handler
     def handle_buddy_message(self, from_uin, content, source):
         self.hub.send_buddy_msg(from_uin, content)
+
+
+    @register_request_handler(PollMessageRequest)
+    def handle_qq_errcode(self, request, resp, data):
+        if data and data.get("retcode") in [121, 100006]:
+            logger.error(u"获取登出消息 {0!r}".format(data))
+            exit()
 
 
 if __name__ == "__main__":
