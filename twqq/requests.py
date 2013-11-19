@@ -369,11 +369,11 @@ class SessGroupSigRequest(WebQQRequest):
     :param sess_reqeust: 发起临时消息的请求
     """
 
-    url = "http://d.web2.qq.com/channel/get_c2cmsg_sig2"
+    url = "https://d.web2.qq.com/channel/get_c2cmsg_sig2"
     def init(self, to_uin, sess_reqeust):
         self.sess_request = sess_reqeust
         self.to_uin = to_uin
-        self.params = (("id", 833193360), ("to_uin", to_uin),
+        self.params = (("id", 779436544), ("to_uin", to_uin),
                        ("service_type", 0), ("clientid", self.hub.clientid),
                        ("psessionid", self.hub.psessionid), ("t", time.time()))
         self.headers.update(Referer = const.S_REFERER)
@@ -387,7 +387,7 @@ class SessGroupSigRequest(WebQQRequest):
             return
 
         logger.info(u"加载临时消息签名 {0} for {1}".format(group_sig, self.to_uin))
-        self.group_sig[self.to_uin] = group_sig
+        self.hub.group_sig[self.to_uin] = group_sig
         self.sess_request.ready = True
         self.sess_request.init_params(group_sig)
         self.hub.load_next_request(self.sess_request)
@@ -399,7 +399,7 @@ class SessMsgRequest(WebQQRequest):
     :param to_uin: 接收人 uin
     :param content: 发送内容
     """
-    url = "http://d.web2.qq.com/channel/send_sess_msg2"
+    url = "https://d.web2.qq.com/channel/send_sess_msg2"
     method = WebQQRequest.METHOD_POST
     def init(self, to_uin, content):
         self.to = to_uin
@@ -416,7 +416,7 @@ class SessMsgRequest(WebQQRequest):
     def init_params(self, group_sig):
         self.delay, self.number = self.hub.get_delay(self._content)
         self.params = (("r", json.dumps({"to":self.to, "group_sig":group_sig,
-                                    "face":564, "content":self.content,
+                                    "face":549, "content":self.content,
                                     "msg_id": self.hub.msg_id, "service_type":0,
                                     "clientid":self.hub.clientid,
                                     "psessionid":self.hub.psessionid})),

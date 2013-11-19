@@ -294,13 +294,13 @@ url::
 发送临时消息需要一个群签名
 URL::
 
-    http://d.web2.qq.com/channel/get_c2cmsg_sig2
+    https://d.web2.qq.com/channel/get_c2cmsg_sig2
 METHOD::
 
     GET
 PARAMS::
 
-    id        请求ID 固定为833193360
+    id        请求ID 固定为779436544
     to_uin    消息接受人uin( 消息的from_uin)
     service_type    固定为0
     clientid        客户端id
@@ -314,7 +314,7 @@ HEADERS::
 ============
 URL::
 
-    http://d.web2.qq.com/channel/send_sess_msg2
+    https://d.web2.qq.com/channel/send_sess_msg2
 METHOD::
 
     POST
@@ -323,7 +323,7 @@ PARAMS::
     r:{
         to               消息接收人 uin
         group_sig        群签名
-        face             固定为 564,
+        face             固定为 549,
         content          发送内容
         msg_id           消息id
         service_type     固定为0,
