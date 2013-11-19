@@ -20,7 +20,7 @@ entry_points = {
 setup(
     name = "twqq",
     version = twqq.__version__,
-    description = 'A asynchronous webqq client library based on tornado',
+    description = 'An asynchronous webqq client library based on tornado',
     long_description = open("README.rst").read(),
     author = 'cold',
     author_email = 'wh_linux@126.com',
