@@ -351,14 +351,15 @@ class RequestHub(object):
                 [func(*func._args_func(self, m)) for func in funcs]
 
 
-    def send_sess_msg(self, to_uin, content):
+    def send_sess_msg(self, qid, to_uin, content):
         """ 发送临时消息
 
+        :param qid: 发送临时消息的qid
         :param to_uin: 消息接收人
         :param content: 消息内容
         :rtype: Request instance
         """
-        return self.load_next_request(SessMsgRequest(to_uin, content))
+        return self.load_next_request(SessMsgRequest(qid, to_uin, content))
 
 
     def send_group_msg(self, group_uin, content):

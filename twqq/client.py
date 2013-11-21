@@ -79,9 +79,10 @@ class WebQQClient(object):
 
 
     @sess_message_handler
-    def log_sess_message(self, from_uin, content, source):
+    def log_sess_message(self, qid, from_uin, content, source):
         """ 记录临时消息日志
 
+        :param qid: 临时消息的qid
         :param from_uin: 发送人uin
         :param content: 内容
         :param source: 消息原包

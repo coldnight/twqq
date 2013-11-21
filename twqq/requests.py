@@ -365,15 +365,16 @@ class PollMessageRequest(WebQQRequest):
 class SessGroupSigRequest(WebQQRequest):
     """ 获取临时消息群签名请求
 
+    :param qid: 临时签名对应的qid
     :param to_uin: 临时消息接收人uin
     :param sess_reqeust: 发起临时消息的请求
     """
 
     url = "https://d.web2.qq.com/channel/get_c2cmsg_sig2"
-    def init(self, to_uin, sess_reqeust):
+    def init(self, qid, to_uin, sess_reqeust):
         self.sess_request = sess_reqeust
         self.to_uin = to_uin
-        self.params = (("id", 779436544), ("to_uin", to_uin),
+        self.params = (("id", qid), ("to_uin", to_uin),
                        ("service_type", 0), ("clientid", self.hub.clientid),
                        ("psessionid", self.hub.psessionid), ("t", time.time()))
         self.headers.update(Referer = const.S_REFERER)
@@ -396,19 +397,20 @@ class SessGroupSigRequest(WebQQRequest):
 class SessMsgRequest(WebQQRequest):
     """ 发送临时消息请求
 
+    :param qid: 临时消息qid
     :param to_uin: 接收人 uin
     :param content: 发送内容
     """
     url = "https://d.web2.qq.com/channel/send_sess_msg2"
     method = WebQQRequest.METHOD_POST
-    def init(self, to_uin, content):
+    def init(self, qid, to_uin, content):
         self.to = to_uin
         self._content = content
         self.content = self.hub.make_msg_content(content)
         group_sig = self.hub.group_sig.get(to_uin)
         if not group_sig:
             self.ready = False
-            self.hub.load_next_request(SessGroupSigRequest(to_uin, self))
+            self.hub.load_next_request(SessGroupSigRequest(qid, to_uin, self))
         else:
             self.init_params(group_sig)
 
@@ -603,16 +605,18 @@ def sess_message_handler(func):
 
     处理函数应接收3个参数:
 
+        id              获取组签名的id
         from_uin        发送人uin
         content         消息内容
         source          消息原包
     """
     def args_func(self, message):
         value = message.get("value", {})
+        id_ = value.get("id")
         from_uin = value.get("from_uin")
         contents = value.get("content", [])
         content = self.handle_qq_msg_contents(contents)
-        return from_uin, content, message
+        return id_, from_uin, content, message
 
     return _register_message_handler(func, args_func, "sess_message")
 
