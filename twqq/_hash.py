@@ -15,6 +15,8 @@
 """
 
 def webqq_hash(i, a):
+    if isinstance(i, (str, unicode)):
+        i = int(i)
     class b:
         def __init__(self, _b, i):
             self.s = _b or 0

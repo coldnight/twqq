@@ -58,5 +58,5 @@ if __name__ == "__main__":
     tornado.log.enable_pretty_logging()
 
 
-    webqq = Client(sys.argv[1], sys.argv[2])
+    webqq = Client(int(sys.argv[1]), sys.argv[2])
     webqq.run()
