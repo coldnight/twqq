@@ -28,7 +28,7 @@ from tornadohttpclient import TornadoHTTPClient
 from .requests import check_request, AcceptVerifyRequest
 from .requests import WebQQRequest, PollMessageRequest, HeartbeatRequest
 from .requests import SessMsgRequest, BuddyMsgRequest, GroupMsgRequest
-from .requests import FirstRequest
+from .requests import FirstRequest, Login2Request
 
 logger = logging.getLogger("twqq")
 
@@ -349,6 +349,12 @@ class RequestHub(object):
             for m in messages:
                 funcs = self.client.msg_handlers.get(m.get("poll_type"), [])
                 [func(*func._args_func(self, m)) for func in funcs]
+
+
+    def relogin(self):
+        """ 被T出或获取登出时尝试重新登录
+        """
+        self.load_next_request(Login2Request())
 
 
     def send_sess_msg(self, qid, to_uin, content):
