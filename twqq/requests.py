@@ -356,7 +356,7 @@ class PollMessageRequest(WebQQRequest):
             if not data:
                 return
 
-            if data.get("retcode") == 121:
+            if data.get("retcode") in [ 121, 120 ]:
                 logger.error("获取登出消息, 尝试重新登录")
                 self.hub.relogin()
                 return
