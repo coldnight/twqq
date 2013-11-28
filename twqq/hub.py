@@ -201,9 +201,10 @@ class RequestHub(object):
             logger.info("开始拉取信息和心跳")
             self.load_next_request(PollMessageRequest())
             self.poll_and_heart = True
-            self.hThread = threading.Thread(target = self._heartbeat)
-            self.hThread.setDaemon(True)
-            self.hThread.start()
+            if self.hThread is None:
+                self.hThread = threading.Thread(target = self._heartbeat)
+                self.hThread.setDaemon(True)
+                self.hThread.start()
 
 
     def _heartbeat(self):
