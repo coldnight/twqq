@@ -59,6 +59,7 @@ class RequestHub(object):
         self.nickname = None
         self.vfwebqq = None
         self.psessionid = None
+        self.stop_poll = False
 
         # 检查是否验证码的回调
         self.ptui_checkVC = lambda r, v, u: (r, v, u)
@@ -108,8 +109,11 @@ class RequestHub(object):
         logger.debug("KWARGS: {0}".format(kwargs))
 
         if request.ready:
+            logger.debug("处理请求: {0}".format(request))
             with ExceptionStackContext(request.handle_exc):
                 func(request.url, request.params, **kwargs)
+        else:
+            logger.debug("请求未就绪: {0}".format(request))
 
         return request
 
@@ -191,6 +195,7 @@ class RequestHub(object):
     def start_poll(self):
         """ 开始心跳和拉取信息
         """
+        self.stop_poll = False
         if not self.poll_and_heart:
             self.login_time = time.time()
             logger.info("开始拉取信息和心跳")
@@ -344,6 +349,10 @@ class RequestHub(object):
 
         :param qq_source: 源消息包
         """
+        if self.stop_poll:
+            logger.info("检测Poll已停止, 此消息不处理: {0}".format(qq_source))
+            return
+
         if qq_source.get("retcode") == 0:
             messages = qq_source.get("result")
             for m in messages:
@@ -354,6 +363,7 @@ class RequestHub(object):
     def relogin(self):
         """ 被T出或获取登出时尝试重新登录
         """
+        self.stop_poll = True
         self.load_next_request(Login2Request())
 
 

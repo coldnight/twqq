@@ -348,6 +348,7 @@ class PollMessageRequest(WebQQRequest):
                 ("psessionid", self.hub.psessionid)]
         self.headers.update(Referer =  const.D_REFERER)
         self.headers.update(Origin = const.D_ORIGIN)
+        self.ready = not self.hub.stop_poll
 
 
     def callback(self, resp, data):

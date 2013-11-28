@@ -12,7 +12,7 @@ import logging
 from abc import abstractmethod
 
 from .hub import RequestHub
-from .requests import FirstRequest, WebQQRequest, BeforeLoginRequest
+from .requests import BeforeLoginRequest
 from .requests import (group_message_handler, buddy_message_handler,
                       kick_message_handler, sess_message_handler,
                       system_message_handler)
