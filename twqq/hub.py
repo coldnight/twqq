@@ -198,10 +198,11 @@ class RequestHub(object):
         self.stop_poll = False
         if not self.poll_and_heart:
             self.login_time = time.time()
-            logger.info("开始拉取信息和心跳")
+            logger.info("开始拉取信息")
             self.load_next_request(PollMessageRequest())
             self.poll_and_heart = True
             if self.hThread is None:
+                logger.info("开始心跳")
                 self.hThread = threading.Thread(target = self._heartbeat)
                 self.hThread.setDaemon(True)
                 self.hThread.start()
@@ -365,6 +366,7 @@ class RequestHub(object):
         """ 被T出或获取登出时尝试重新登录
         """
         self.stop_poll = True
+        self.poll_and_heart = None
         self.load_next_request(Login2Request(relogin = True))
 
 
