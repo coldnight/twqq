@@ -272,7 +272,7 @@ class GroupListRequest(WebQQRequest):
     def callback(self, resp, data):
         logger.debug(u"群信息 {0!r}".format(data))
         group_list = data.get("result", {}).get("gnamelist", [])
-        logger.debug(u"群列表: {0!r}".format(group_list))
+        logger.info(u"群列表: {0!r}".format(group_list))
         if not group_list:
             self.hub.start_poll()
 
