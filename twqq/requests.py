@@ -193,7 +193,8 @@ class Login2Request(WebQQRequest):
     url = "http://d.web2.qq.com/channel/login2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self):
+    def init(self, relogin = False):
+        self.relogin = relogin
         logger.info("准备完毕, 开始登录")
         self.headers.update(Referer = const.S_REFERER, Origin = const.D_ORIGIN)
         self.params = [("r", json.dumps({"status": "online",
@@ -217,9 +218,13 @@ class Login2Request(WebQQRequest):
             return
         self.hub.vfwebqq = data.get("result", {}).get("vfwebqq")
         self.hub.psessionid = data.get("result", {}).get("psessionid")
-        logger.info("登录成功")
 
-        self.hub.load_next_request(FriendInfoRequest())
+        if not self.relogin:
+            logger.info("登录成功, 开始加载好友消息")
+            self.hub.load_next_request(FriendInfoRequest())
+        else:
+            logger.info("重新登录成功, 开始拉取消息")
+            self.hub.start_poll()
 
 
 class FriendInfoRequest(WebQQRequest):

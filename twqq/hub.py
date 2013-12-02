@@ -365,7 +365,7 @@ class RequestHub(object):
         """ 被T出或获取登出时尝试重新登录
         """
         self.stop_poll = True
-        self.load_next_request(Login2Request())
+        self.load_next_request(Login2Request(relogin = True))
 
 
     def send_sess_msg(self, qid, to_uin, content):
