@@ -228,15 +228,18 @@ class FriendInfoRequest(WebQQRequest):
     url = "http://s.web2.qq.com/api/get_user_friends2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self):
+    def init(self, first = True):
+        self.is_first = first
         self.params = [("r", json.dumps({"h":"hello", "hash":self.hub._hash(),
                                     "vfwebqq":self.hub.vfwebqq}))]
         self.headers.update(Referer = const.S_REFERER)
 
     def callback(self, resp, data):
-        if not resp.body:
+        if not resp.body and self.is_first:
+            logger.error("加载好友信息失败, 重新开始登录")
             return self.hub.load_next_request(FirstRequest())
-        if data.get("retcode") != 0:
+        if data.get("retcode") != 0 and self.is_first:
+            logger.error("加载好友信息失败, 重新开始登录")
             return self.hub.load_next_request(FirstRequest())
 
         lst = data.get("result", {}).get("info", [])
@@ -251,9 +254,7 @@ class FriendInfoRequest(WebQQRequest):
         logger.debug("加载好友信息 {0!r}".format(self.hub.friend_info))
         logger.info(data)
         self.hub.load_next_request(GroupListRequest())
-        self.hub.load_next_request(FriendInfoRequest(delay = 3600))
-        # if self.status_callback and call_status:
-        #     self.status_callback(True)
+        self.hub.load_next_request(FriendInfoRequest(delay = 3600, first = False))
 
 
 class GroupListRequest(WebQQRequest):
