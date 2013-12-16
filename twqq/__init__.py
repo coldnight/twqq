@@ -7,4 +7,4 @@
 #   Desc    :
 #
 
-__version__ = '0.16e'
+__version__ = '0.16'
