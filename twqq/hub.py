@@ -100,6 +100,10 @@ class RequestHub(object):
         func = self.http.get if request.method == WebQQRequest.METHOD_GET \
                 else self.http.post
 
+        if self.stop_poll and isinstance(request, PollMessageRequest):
+            logger.info("检测Poll已停止, 此请求不处理: {0}".format(request))
+            return
+
         kwargs = copy.deepcopy(request.kwargs)
         callback = request.callback if hasattr(request, "callback") and\
                 callable(request.callback) else None
