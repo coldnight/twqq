@@ -82,8 +82,8 @@ class CheckRequest(WebQQRequest):
     def callback(self, resp, data):
         r, vcode, uin = eval("self.hub."+data.strip().rstrip(";"))
         logger.debug("R:{0} vcode:{1}".format(r, vcode))
+        self.hub.clean()
         if int(r) == 0:
-            self.hub.clean()
             logger.info("验证码检查完毕, 不需要验证码")
             password = self.hub.handle_pwd(r, vcode, uin)
             self.hub.check_code = vcode
