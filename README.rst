@@ -18,8 +18,8 @@ TODO
 
 
 
-如果您觉得功能不错, 您可以 |imglink|_ 让我更多的支持开源事业
+.. 如果您觉得功能不错, 您可以 |imglink|_ 让我更多的支持开源事业
 
-.. |imglink| image:: https://img.alipay.com/sys/personalprod/style/mc/btn-index.png
+.. .. |imglink| image:: https://img.alipay.com/sys/personalprod/style/mc/btn-index.png
 
-.. _imglink: http://me.alipay.com/woodd
+.. .. _imglink: http://me.alipay.com/woodd
