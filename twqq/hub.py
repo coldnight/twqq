@@ -44,7 +44,7 @@ class RequestHub(object):
         self.http.set_user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 Chrome/28.0.1500.71 Safari/537.36")
         self.http.validate_cert = False
         self.http.set_global_headers({"Accept-Charset": "UTF-8,*;q=0.5"})
-        self.debug = debug
+        self.http.debug = debug
 
         self.qid = qid
         self.__pwd = pwd
