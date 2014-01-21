@@ -24,11 +24,11 @@ class WebQQClient(object):
     :param qq: QQ号
     :param pwd: 密码
     """
-    def __init__(self, qq, pwd):
+    def __init__(self, qq, pwd, debug = False):
                 # self.msg_disp = MessageDispatch(self)
         self.setup_msg_handlers()
         self.setup_request_handlers()
-        self.hub = RequestHub(qq, pwd, self)
+        self.hub = RequestHub(qq, pwd, self, debug)
 
 
     @abstractmethod

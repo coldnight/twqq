@@ -39,11 +39,12 @@ class RequestHub(object):
     :param client: ~twqq.client.Client instance
     """
     SIG_RE = re.compile(r'var g_login_sig=encodeURIComponent\("(.*?)"\);')
-    def __init__(self, qid, pwd, client = None):
+    def __init__(self, qid, pwd, client = None, debug = False):
         self.http = TornadoHTTPClient()
         self.http.set_user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 Chrome/28.0.1500.71 Safari/537.36")
         self.http.validate_cert = False
         self.http.set_global_headers({"Accept-Charset": "UTF-8,*;q=0.5"})
+        self.debug = debug
 
         self.qid = qid
         self.__pwd = pwd
