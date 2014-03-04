@@ -57,7 +57,7 @@ class RequestHub(object):
         self.daid = 164
         self.login_sig = None
         self.ptwebqq = None
-        self.nickname = None
+        self.nickname = u"YouWillNeverGetIt"
         self.vfwebqq = None
         self.psessionid = None
         self.stop_poll = False
