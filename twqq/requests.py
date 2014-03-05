@@ -495,6 +495,34 @@ class GroupMsgRequest(WebQQRequest):
         self.hub.consume_delay(self.number)
 
 
+class DiscuMsgRequest(WebQQRequest):
+    """ 发送讨论组消息请求
+    :param did: 讨论组id
+    :param content: 消息内容
+    """
+
+    url = "https://d.web2.qq.com/channel/send_discu_msg2"
+    method = WebQQRequest.METHOD_POST
+
+    def init(self, did, content):
+        self.delay, self.number = self.hub.get_delay(content)
+        self.did = did
+        self.source = content
+        content = self.hub.make_msg_content(content)
+        r = {"did": did, "content": content,
+             "msg_id": self.hub.msg_id, "clientid": self.hub.clientid,
+             "psessionid": self.hub.psessionid}
+        self.params = [("r", json.dumps(r)),
+                       ("psessionid", self.hub.psessionid),
+                       ("clientid", self.hub.clientid)]
+        self.headers.update(Referer=const.D_REFERER)
+
+    def callback(self, resp, data):
+        logger.info(u"发送讨论组消息 {0} 到 {1} 成功: {2}"
+                    .format(self.source, self.did, data))
+        self.hub.consume_delay(self.number)
+
+
 class BuddyMsgRequest(WebQQRequest):
 
     """ 好友消息请求
@@ -684,6 +712,24 @@ def system_message_handler(func):
         return (value.get("type"), value.get("from_uin"), value.get("account"),
                 message)
     return _register_message_handler(func, args_func, "system_message")
+
+
+def discu_message_handler(func):
+    """ 装饰处理讨论组消息的函数
+
+    处理函数应接收
+        did        讨论组id
+        from_uin   发送消息的人
+        content    消息内容
+        source     消息原包
+    """
+
+    def args_func(self, message):
+        value = message.get("value")
+        content = self.handle_qq_msg_contents(value.get("content", []))
+        return (value.get("did"), value.get("send_uin"), content, message)
+
+    return _register_message_handler(func, args_func, "discu_message")
 
 
 def check_request(request):

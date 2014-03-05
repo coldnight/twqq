@@ -15,7 +15,7 @@ from .hub import RequestHub
 from .requests import BeforeLoginRequest
 from .requests import (group_message_handler, buddy_message_handler,
                        kick_message_handler, sess_message_handler,
-                       system_message_handler)
+                       system_message_handler, discu_message_handler)
 
 logger = logging.getLogger("twqq")
 
@@ -90,6 +90,18 @@ class WebQQClient(object):
         logger.info(u"获取 {0} 发送的临时消息: {1}"
                     .format(from_uin, content))
 
+    @discu_message_handler
+    def log_discu_message(self, did, from_uin, content, source):
+        """ 记录讨论组消息日志
+
+        :param did: 讨论组id
+        :param from_uin: 消息发送人 uin
+        :param content: 内容
+        :param source: 源消息
+        """
+        logger.info(u"获取 {0} 发送的讨论组消息: {1}"
+                    .format(did, content))
+
     @kick_message_handler
     def log_kick_message(self, message):
         """ 被T除的消息
@@ -112,7 +124,7 @@ class WebQQClient(object):
             if not hasattr(handler, "_twqq_msg_type"):
                 continue
 
-            if msg_handlers.has_key(handler._twqq_msg_type):
+            if handler._twqq_msg_type in msg_handlers:
                 msg_handlers[handler._twqq_msg_type].append(handler)
             else:
                 msg_handlers[handler._twqq_msg_type] = [handler]
@@ -127,7 +139,7 @@ class WebQQClient(object):
             if not hasattr(handler, "_twqq_request"):
                 continue
 
-            if request_handlers.has_key(handler._twqq_request):
+            if handler._twqq_request in request_handlers:
                 request_handlers[handler._twqq_request].append(handler)
             else:
                 request_handlers[handler._twqq_request] = [handler]

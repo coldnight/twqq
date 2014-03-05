@@ -28,7 +28,7 @@ from tornadohttpclient import TornadoHTTPClient
 from .requests import check_request, AcceptVerifyRequest
 from .requests import WebQQRequest, PollMessageRequest, HeartbeatRequest
 from .requests import SessMsgRequest, BuddyMsgRequest, GroupMsgRequest
-from .requests import FirstRequest, Login2Request
+from .requests import FirstRequest, Login2Request, DiscuMsgRequest
 
 logger = logging.getLogger("twqq")
 
@@ -45,7 +45,9 @@ class RequestHub(object):
     def __init__(self, qid, pwd, client=None, debug=False):
         self.http = TornadoHTTPClient()
         self.http.set_user_agent(
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 Chrome/28.0.1500.71 Safari/537.36")
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+            " (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 "
+            "Chrome/28.0.1500.71 Safari/537.36")
         self.http.validate_cert = False
         self.http.set_global_headers({"Accept-Charset": "UTF-8,*;q=0.5"})
         self.http.debug = debug
@@ -228,8 +230,9 @@ class RequestHub(object):
         :rtype: str
         """
         self.msg_id += 1
-        return json.dumps([content, ["font", {"name": "Monospace", "size": 10,
-                                              "style": [0, 0, 0], "color":"000000"}]])
+        return json.dumps([content,
+                           ["font", {"name": "Monospace", "size": 10,
+                                     "style": [0, 0, 0], "color":"000000"}]])
 
     def get_delay(self, content):
         """ 根据消息内容是否和上一条内容相同和未送出的消息数目产生延迟
@@ -250,7 +253,8 @@ class RequestHub(object):
 
         # 如果间隔是已有消息间隔的2倍, 则清除已有消息数
         # print "sub", sub, "n:", self.last_msg_numbers
-        if self.last_msg_numbers > 0 and sub / (MIN * self.last_msg_numbers) > 1:
+        if self.last_msg_numbers > 0 and\
+                sub / (MIN * self.last_msg_numbers) > 1:
             self.last_msg_numbers = 0
 
         # 如果还有消息未发送, 则加上他们的间隔
@@ -288,6 +292,17 @@ class RequestHub(object):
         :param uin: 组的uin
         """
         return self.group_info.get(uin, {}).get("gid")
+
+    def get_friend_name(self, uin):
+        """ 获取好友名称
+
+        :param uin: 好友uin
+        """
+        info = self.friend_info.get(uin, {})
+        name = info.get("markname")
+        if name is None:
+            name = info.get("nick")
+        return name
 
     def wrap(self, request, func=None):
         """ 装饰callback
@@ -328,7 +343,7 @@ class RequestHub(object):
                                        u" Web：http://web.qq.com/】", "")\
                     .replace(u"【提示：此用户正在使用Q+"
                              u" Web：http://web3.qq.com/】", "")
-        return  content.replace("\r", "\n").replace("\r\n", "\n")\
+        return content.replace("\r", "\n").replace("\r\n", "\n")\
             .replace("\n\n", "\n")
 
     def get_group_member_nick(self, gcode, uin):
@@ -380,6 +395,14 @@ class RequestHub(object):
         """
         return self.load_next_request(GroupMsgRequest(group_uin, content))
 
+    def send_discu_msg(self, did, content):
+        """ 发送讨论组消息
+
+        :param did: 讨论组id
+        :param content: 内容
+        """
+        return self.load_next_request(DiscuMsgRequest(did, content))
+
     def send_buddy_msg(self, to_uin, content):
         """ 发送好友消息
 
@@ -408,4 +431,5 @@ class RequestHub(object):
         :param account: 请求人账号
         :param markname: 添加后的备注
         """
-        return self.load_next_request(AcceptVerifyRequest(uin, account, markname))
+        return self.load_next_request(AcceptVerifyRequest(uin, account,
+                                                          markname))
