@@ -537,8 +537,8 @@ class SetSignatureRequest(WebQQRequest):
     method = WebQQRequest.METHOD_POST
 
     def init(self, signature):
-        self.params = (
-            ("r", json.dumps({"nlk": signature, "vfwebqq": self.hub.vfwebqq})),)
+        self.params = (("r", json.dumps({"nlk": signature,
+                                         "vfwebqq": self.hub.vfwebqq})),)
         self.headers.update(Origin=const.S_ORIGIN)
         self.headers.update(Referer=const.S_REFERER)
 
@@ -561,7 +561,8 @@ class AcceptVerifyRequest(WebQQRequest):
         self.qq_num = qq_num
         self.markname = markname
         self.params = [("r", "{\"account\":%d, \"gid\":0, \"mname\":\"%s\","
-                        " \"vfwebqq\":\"%s\"}" % (qq_num, markname, self.hub.vfwebqq)), ]
+                        " \"vfwebqq\":\"%s\"}" % (qq_num, markname,
+                                                  self.hub.vfwebqq)), ]
         self.headers.update(Origin=const.S_ORIGIN)
         self.headers.update(Referer=const.S_REFERER)
 
