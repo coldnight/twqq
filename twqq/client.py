@@ -14,22 +14,25 @@ from abc import abstractmethod
 from .hub import RequestHub
 from .requests import BeforeLoginRequest
 from .requests import (group_message_handler, buddy_message_handler,
-                      kick_message_handler, sess_message_handler,
-                      system_message_handler)
+                       kick_message_handler, sess_message_handler,
+                       system_message_handler)
 
 logger = logging.getLogger("twqq")
+
+
 class WebQQClient(object):
+
     """ Webqq 模拟客户端
 
     :param qq: QQ号
     :param pwd: 密码
     """
-    def __init__(self, qq, pwd, debug = False):
+
+    def __init__(self, qq, pwd, debug=False):
                 # self.msg_disp = MessageDispatch(self)
         self.setup_msg_handlers()
         self.setup_request_handlers()
         self.hub = RequestHub(qq, pwd, self, debug)
-
 
     @abstractmethod
     def handle_verify_code(self, path, r, uin):
@@ -50,10 +53,9 @@ class WebQQClient(object):
         pwd = self.hub.handle_pwd(r, self.hub.check_code.upper(), uin)
         self.hub.load_next_request(BeforeLoginRequest(pwd))
 
-
     @group_message_handler
     def log_group_message(self, member_nick, content, group_code,
-                             send_uin, source):
+                          send_uin, source):
         """ 对群消息进行日志记录
 
         :param member_nick: 群昵称
@@ -65,7 +67,6 @@ class WebQQClient(object):
         logger.info(u"获取{0} 群的{1} 发送消息: {2}"
                     .format(group_code, member_nick, content))
 
-
     @buddy_message_handler
     def log_buddy_message(self, from_uin, content, source):
         """ 对好友消息进行日志记录
@@ -75,8 +76,7 @@ class WebQQClient(object):
         :param source: 消息原包
         """
         logger.info(u"获取 {0} 发送的好友消息: {1}"
-                     .format(from_uin, content))
-
+                    .format(from_uin, content))
 
     @sess_message_handler
     def log_sess_message(self, qid, from_uin, content, source):
@@ -88,7 +88,7 @@ class WebQQClient(object):
         :param source: 消息原包
         """
         logger.info(u"获取 {0} 发送的临时消息: {1}"
-                     .format(from_uin, content))
+                    .format(from_uin, content))
 
     @kick_message_handler
     def log_kick_message(self, message):
@@ -96,14 +96,12 @@ class WebQQClient(object):
         """
         logger.info(u"其他地方登录了此QQ{0}".format(message))
 
-
     @system_message_handler
     def log_system_message(self, typ, from_uin, account, source):
         """ 记录系统消息日志
         """
         logger.info("系统消息: 类型:{0}, 发送人:{1}, 发送账号:{2}, 源:{3}"
-                     .format(type, from_uin, account, source))
-
+                    .format(type, from_uin, account, source))
 
     def setup_msg_handlers(self):
         """ 获取消息处理器, 获取被 twqq.requests.*_message_handler装饰的成员函数
@@ -121,7 +119,6 @@ class WebQQClient(object):
 
         self.msg_handlers = msg_handlers
 
-
     def setup_request_handlers(self):
         """ 获取请求处理器(被twqq.reqeusts.register_request_handler 装饰的函数)
         """
@@ -133,10 +130,9 @@ class WebQQClient(object):
             if request_handlers.has_key(handler._twqq_request):
                 request_handlers[handler._twqq_request].append(handler)
             else:
-                request_handlers[handler._twqq_request] = [ handler ]
+                request_handlers[handler._twqq_request] = [handler]
 
         self.request_handlers = request_handlers
-
 
     def run(self):
         self.hub.http.start()

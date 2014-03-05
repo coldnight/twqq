@@ -17,6 +17,7 @@ import const
 
 logger = logging.getLogger("twqq")
 
+
 class WebQQRequest(object):
     METHOD_POST = "post"
     METHOD_GET = "get"
@@ -33,7 +34,6 @@ class WebQQRequest(object):
         self.delay = kwargs.pop("delay", 0)
         self.init(*args, **kwargs)
 
-
     def handle_exc(self, type, value, trace):
         pass
 
@@ -44,13 +44,14 @@ class LoginSigRequest(WebQQRequest):
     def init(self):
         self.hub.wait()
         logger.info("获取 login_sig...")
-        self.params = [("daid", self.hub.daid), ("target", "self"), ("style", 5),
-                  ("mibao_css", "m_webqq"), ("appid", self.hub.aid),
-                  ("enable_qlogin", 0), ("no_verifyimg", 1),
-                  ("s_url", "http://web2.qq.com/loginproxy.html"),
-                  ("f_url", "loginerroralert"),
-                  ("strong_login", 1), ("login_state", 10),
-                  ("t", "20130723001")]
+        self.params = [("daid", self.hub.daid), ("target", "self"),
+                       ("style", 5), ("mibao_css", "m_webqq"),
+                       ("appid", self.hub.aid), ("enable_qlogin", 0),
+                       ("no_verifyimg", 1),
+                       ("s_url", "http://web2.qq.com/loginproxy.html"),
+                       ("f_url", "loginerroralert"),
+                       ("strong_login", 1), ("login_state", 10),
+                       ("t", "20130723001")]
 
     def callback(self, resp, data):
         if not data:
@@ -68,19 +69,19 @@ class LoginSigRequest(WebQQRequest):
 
 
 class CheckRequest(WebQQRequest):
+
     """ 检查是否需要验证码
     """
     url = "http://check.ptlogin2.qq.com/check"
 
     def init(self):
-        self.params = {"uin":self.hub.qid, "appid":self.hub.aid,
-                       "u1": const.CHECK_U1, "login_sig":self.hub.login_sig,
-                       "js_ver":10040, "js_type":0, "r" : random.random()}
-        self.headers.update({"Referer":const.CHECK_REFERER})
-
+        self.params = {"uin": self.hub.qid, "appid": self.hub.aid,
+                       "u1": const.CHECK_U1, "login_sig": self.hub.login_sig,
+                       "js_ver": 10040, "js_type": 0, "r": random.random()}
+        self.headers.update({"Referer": const.CHECK_REFERER})
 
     def callback(self, resp, data):
-        r, vcode, uin = eval("self.hub."+data.strip().rstrip(";"))
+        r, vcode, uin = eval("self.hub." + data.strip().rstrip(";"))
         logger.debug("R:{0} vcode:{1}".format(r, vcode))
         self.hub.clean()
         if int(r) == 0:
@@ -108,43 +109,52 @@ class VerifyCodeRequest(WebQQRequest):
             f.write(resp.body)
         self.hub.unwait()
 
-        self.hub.client.handle_verify_code(self.hub.checkimg_path, self.r, self.uin)
+        self.hub.client.handle_verify_code(self.hub.checkimg_path, self.r,
+                                           self.uin)
 
 
 class BeforeLoginRequest(WebQQRequest):
+
     """ 登录前的准备
     """
     url = "https://ssl.ptlogin2.qq.com/login"
+
     def init(self, password):
         self.hub.unwait()
         self.hub.lock()
-        self.params = [("u",self.hub.qid), ("p",password),
+        self.params = [("u", self.hub.qid), ("p", password),
                        ("verifycode", self.hub.check_code),
-                       ("webqq_type",10), ("remember_uin", 1),("login2qq",1),
+                       ("webqq_type", 10), ("remember_uin", 1),
+                       ("login2qq", 1),
                        ("aid", self.hub.aid), ("u1", const.BLOGIN_U1),
-                       ("h", 1), ("action", 4-5-8246), ("ptredirect", 0),
-                       ("ptlang", 2052), ("from_ui", 1), ("daid", self.hub.daid),
+                       ("h", 1), ("action", '4-5-8246'), ("ptredirect", 0),
+                       ("ptlang", 2052), ("from_ui", 1),
+                       ("daid", self.hub.daid),
                        ("pttype", 1), ("dumy", ""), ("fp", "loginerroralert"),
-                       ("mibao_css","m_webqq"), ("t",1), ("g",1), ("js_type",0),
+                       ("mibao_css", "m_webqq"), ("t", 1), ("g", 1),
+                       ("js_type", 0),
                        ("js_ver", 10040), ("login_sig", self.hub.login_sig)]
-        referer =  const.BLOGIN_R_REFERER if self.hub.require_check else const.BLOGIN_REFERER
+        referer = const.BLOGIN_R_REFERER if self.hub.require_check else\
+            const.BLOGIN_REFERER
         self.headers.update({"Referer": referer})
 
-    def ptuiCB(self, scode, r, url, status, msg, nickname = None):
+    def ptuiCB(self, scode, r, url, status, msg, nickname=None):
         """ 模拟JS登录之前的回调, 保存昵称 """
         return scode, r, url, status, msg, nickname
 
     def get_back_args(self, data):
         blogin_data = data.decode("utf-8").strip().rstrip(";")
+        logger.info(u"登录返回数据: {0}".format(blogin_data))
         return eval("self." + blogin_data)
 
-    def check(self, scode, r, url, status, msg, nickname = None):
+    def check(self, scode, r, url, status, msg, nickname=None):
         self.hub.unlock()
         if int(scode) == 0:
             logger.info("从Cookie中获取ptwebqq的值")
             old_value = self.hub.ptwebqq
             try:
-                self.hub.ptwebqq = self.hub.http.cookie['.qq.com']['/']['ptwebqq'].value
+                val = self.hub.http.cookie['.qq.com']['/']['ptwebqq'].value
+                self.hub.ptwebqq = val
             except:
                 logger.error("从Cookie中获取ptwebqq的值失败, 使用旧值尝试")
                 self.hub.ptwebqq = old_value
@@ -173,12 +183,14 @@ class BeforeLoginRequest(WebQQRequest):
 
 
 class LoginRequest(WebQQRequest):
+
     """ 登录前的准备
     """
+
     def init(self, url):
         logger.info("开始登录前准备...")
         self.url = url
-        self.headers.update(Referer = const.LOGIN_REFERER)
+        self.headers.update(Referer=const.LOGIN_REFERER)
 
     def callback(self, resp, data):
         if os.path.exists(self.hub.checkimg_path):
@@ -188,20 +200,21 @@ class LoginRequest(WebQQRequest):
 
 
 class Login2Request(WebQQRequest):
+
     """ 真正的登录
     """
     url = "http://d.web2.qq.com/channel/login2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self, relogin = False):
+    def init(self, relogin=False):
         self.relogin = relogin
         logger.info("准备完毕, 开始登录")
-        self.headers.update(Referer = const.S_REFERER, Origin = const.D_ORIGIN)
+        self.headers.update(Referer=const.S_REFERER, Origin=const.D_ORIGIN)
         self.params = [("r", json.dumps({"status": "online",
                                          "ptwebqq": self.hub.ptwebqq,
-                                         "passwd_sig":"",
-                                         "clientid":self.hub.clientid,
-                                         "psessionid":None})),
+                                         "passwd_sig": "",
+                                         "clientid": self.hub.clientid,
+                                         "psessionid": None})),
                        ("clientid", self.hub.clientid),
                        ("psessionid", "null")]
 
@@ -228,16 +241,18 @@ class Login2Request(WebQQRequest):
 
 
 class FriendInfoRequest(WebQQRequest):
+
     """ 加载好友信息
     """
     url = "http://s.web2.qq.com/api/get_user_friends2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self, first = True):
+    def init(self, first=True):
         self.is_first = first
-        self.params = [("r", json.dumps({"h":"hello", "hash":self.hub._hash(),
-                                    "vfwebqq":self.hub.vfwebqq}))]
-        self.headers.update(Referer = const.S_REFERER)
+        self.params = [("r", json.dumps({"h": "hello",
+                                         "hash": self.hub._hash(),
+                                         "vfwebqq": self.hub.vfwebqq}))]
+        self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
         if not resp.body and self.is_first:
@@ -259,21 +274,21 @@ class FriendInfoRequest(WebQQRequest):
         logger.debug("加载好友信息 {0!r}".format(self.hub.friend_info))
         logger.info(data)
         self.hub.load_next_request(GroupListRequest())
-        self.hub.load_next_request(FriendInfoRequest(delay = 3600, first = False))
+        self.hub.load_next_request(FriendInfoRequest(delay=3600, first=False))
 
 
 class GroupListRequest(WebQQRequest):
+
     """ 获取群列表
     """
     url = "http://s.web2.qq.com/api/get_group_name_list_mask2"
     method = WebQQRequest.METHOD_POST
 
     def init(self):
-        self.params = {"r": json.dumps({"vfwebqq":self.hub.vfwebqq})}
-        self.headers.update(Origin = const.S_ORIGIN)
-        self.headers.update(Referer = const.S_REFERER )
+        self.params = {"r": json.dumps({"vfwebqq": self.hub.vfwebqq})}
+        self.headers.update(Origin=const.S_ORIGIN)
+        self.headers.update(Referer=const.S_REFERER)
         logger.info("获取群列表")
-
 
     def callback(self, resp, data):
         logger.debug(u"群信息 {0!r}".format(data))
@@ -289,6 +304,7 @@ class GroupListRequest(WebQQRequest):
 
 
 class GroupMembersRequest(WebQQRequest):
+
     """ 获取群成员
 
     :param gcode: 群代码
@@ -296,13 +312,13 @@ class GroupMembersRequest(WebQQRequest):
     :type poll: boolean
     """
     url = "http://s.web2.qq.com/api/get_group_info_ext2"
-    def init(self, gcode, poll = False):
+
+    def init(self, gcode, poll=False):
         self._poll = poll
         self._gcode = gcode
-        self.params = [("gcode", gcode),("vfwebqq", self.hub.vfwebqq),
+        self.params = [("gcode", gcode), ("vfwebqq", self.hub.vfwebqq),
                        ("cb", "undefined"), ("t", int(time.time()))]
-        self.headers.update(Referer = const.S_REFERER)
-
+        self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
         logger.debug(u"获取群成员信息 {0!r}".format(data))
@@ -321,19 +337,21 @@ class GroupMembersRequest(WebQQRequest):
 
         logger.debug(u"群成员信息: {0!r}".format(self.hub.group_members_info))
 
-
         if self._poll:
             self.hub.start_poll()
 
 
 class HeartbeatRequest(WebQQRequest):
+
     """ 心跳请求
     """
     url = "http://web.qq.com/web2/get_msg_tip"
-    kwargs = dict(request_timeout = 0.5, connect_timeout = 0.5)
+    kwargs = dict(request_timeout=0.5, connect_timeout=0.5)
+
     def init(self):
         self.params = dict([("uin", ""), ("tp", 1), ("id", 0), ("retype", 1),
-                        ("rc", self.hub.rc), ("lv", 3), ("t", int(time.time() * 1000))])
+                            ("rc", self.hub.rc), ("lv", 3),
+                            ("t", int(time.time() * 1000))])
         self.hub.rc += 1
 
     def callback(self, resp, data):
@@ -341,6 +359,7 @@ class HeartbeatRequest(WebQQRequest):
 
 
 class PollMessageRequest(WebQQRequest):
+
     """ 拉取消息请求
     """
     url = "http://d.web2.qq.com/channel/poll2"
@@ -348,21 +367,21 @@ class PollMessageRequest(WebQQRequest):
     kwargs = {"request_timeout": 60.0, "connect_timeout": 60.0}
 
     def init(self):
-        rdic = {"clientid": self.hub.clientid, "psessionid": self.hub.psessionid,
-                "key": 0, "ids":[]}
-        self.params = [("r", json.dumps(rdic)), ("clientid", self.hub.clientid),
-                ("psessionid", self.hub.psessionid)]
-        self.headers.update(Referer =  const.D_REFERER)
-        self.headers.update(Origin = const.D_ORIGIN)
+        rdic = {"clientid": self.hub.clientid,
+                "psessionid": self.hub.psessionid, "key": 0, "ids": []}
+        self.params = [("r", json.dumps(rdic)),
+                       ("clientid", self.hub.clientid),
+                       ("psessionid", self.hub.psessionid)]
+        self.headers.update(Referer=const.D_REFERER)
+        self.headers.update(Origin=const.D_ORIGIN)
         self.ready = not self.hub.stop_poll
-
 
     def callback(self, resp, data):
         try:
             if not data:
                 return
 
-            if data.get("retcode") in [ 121, 120 ]:
+            if data.get("retcode") in [121, 120]:
                 logger.error("获取登出消息, 尝试重新登录")
                 self.hub.relogin()
                 return
@@ -370,12 +389,13 @@ class PollMessageRequest(WebQQRequest):
             logger.info(u"获取消息: {0!r}".format(data))
             self.hub.dispatch(data)
         except Exception as e:
-            logger.error(u"消息获取异常: {0}".format(e), exc_info = True)
+            logger.error(u"消息获取异常: {0}".format(e), exc_info=True)
         finally:
             self.hub.load_next_request(PollMessageRequest())
 
 
 class SessGroupSigRequest(WebQQRequest):
+
     """ 获取临时消息群签名请求
 
     :param qid: 临时签名对应的qid
@@ -384,14 +404,14 @@ class SessGroupSigRequest(WebQQRequest):
     """
 
     url = "https://d.web2.qq.com/channel/get_c2cmsg_sig2"
+
     def init(self, qid, to_uin, sess_reqeust):
         self.sess_request = sess_reqeust
         self.to_uin = to_uin
         self.params = (("id", qid), ("to_uin", to_uin),
                        ("service_type", 0), ("clientid", self.hub.clientid),
                        ("psessionid", self.hub.psessionid), ("t", time.time()))
-        self.headers.update(Referer = const.S_REFERER)
-
+        self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
         result = data.get("result")
@@ -408,6 +428,7 @@ class SessGroupSigRequest(WebQQRequest):
 
 
 class SessMsgRequest(WebQQRequest):
+
     """ 发送临时消息请求
 
     :param qid: 临时消息qid
@@ -416,6 +437,7 @@ class SessMsgRequest(WebQQRequest):
     """
     url = "https://d.web2.qq.com/channel/send_sess_msg2"
     method = WebQQRequest.METHOD_POST
+
     def init(self, qid, to_uin, content):
         self.to = to_uin
         self._content = content
@@ -427,16 +449,16 @@ class SessMsgRequest(WebQQRequest):
         else:
             self.init_params(group_sig)
 
-
     def init_params(self, group_sig):
         self.delay, self.number = self.hub.get_delay(self._content)
-        self.params = (("r", json.dumps({"to":self.to, "group_sig":group_sig,
-                                    "face":549, "content":self.content,
-                                    "msg_id": self.hub.msg_id, "service_type":0,
-                                    "clientid":self.hub.clientid,
-                                    "psessionid":self.hub.psessionid})),
-                  ("clientid", self.hub.clientid), ("psessionid", self.hub.psessionid))
-
+        self.params = (("r", json.dumps({"to": self.to, "group_sig": group_sig,
+                                         "face": 549, "content": self.content,
+                                         "msg_id": self.hub.msg_id,
+                                         "service_type": 0,
+                                         "clientid": self.hub.clientid,
+                                         "psessionid": self.hub.psessionid})),
+                       ("clientid", self.hub.clientid),
+                       ("psessionid", self.hub.psessionid))
 
     def callback(self, resp, data):
         logger.info(u"发送给 {0} 临时消息成功: {1}".format(self.to, data))
@@ -444,6 +466,7 @@ class SessMsgRequest(WebQQRequest):
 
 
 class GroupMsgRequest(WebQQRequest):
+
     """ 发送群消息
 
     :param group_uin: 群uin
@@ -451,6 +474,7 @@ class GroupMsgRequest(WebQQRequest):
     """
     url = "http://d.web2.qq.com/channel/send_qun_msg2"
     method = WebQQRequest.METHOD_POST
+
     def init(self, group_uin, content):
         self.delay, self.number = self.hub.get_delay(content)
         self.gid = self.hub.get_group_id(group_uin)
@@ -458,20 +482,21 @@ class GroupMsgRequest(WebQQRequest):
         self.source = content
         content = self.hub.make_msg_content(content)
         r = {"group_uin": self.gid, "content": content,
-            "msg_id": self.hub.msg_id, "clientid": self.hub.clientid,
-            "psessionid": self.hub.psessionid}
-        self.params = [("r", json.dumps(r)), ("psessionid", self.hub.psessionid),
-                ("clientid", self.hub.clientid)]
-        self.headers.update(Origin = const.D_ORIGIN,
-                            Referer = const.D_REFERER)
+             "msg_id": self.hub.msg_id, "clientid": self.hub.clientid,
+             "psessionid": self.hub.psessionid}
+        self.params = [("r", json.dumps(r)),
+                       ("psessionid", self.hub.psessionid),
+                       ("clientid", self.hub.clientid)]
+        self.headers.update(Origin=const.D_ORIGIN, Referer=const.D_REFERER)
 
     def callback(self, resp, data):
         logger.info(u"发送群消息 {0} 到 {1} 成功: {2}"
-                     .format(self.source, self.group_uin, data))
+                    .format(self.source, self.group_uin, data))
         self.hub.consume_delay(self.number)
 
 
 class BuddyMsgRequest(WebQQRequest):
+
     """ 好友消息请求
 
     :param to_uin: 消息接收人
@@ -480,45 +505,49 @@ class BuddyMsgRequest(WebQQRequest):
     """
     url = "http://d.web2.qq.com/channel/send_buddy_msg2"
     method = WebQQRequest.METHOD_POST
+
     def init(self, to_uin, content):
         self.to_uin = to_uin
         self.source = content
         self.content = self.hub.make_msg_content(content)
-        r = {"to":to_uin, "face":564, "content":self.content,
-             "clientid":self.hub.clientid, "msg_id": self.hub.msg_id,
+        r = {"to": to_uin, "face": 564, "content": self.content,
+             "clientid": self.hub.clientid, "msg_id": self.hub.msg_id,
              "psessionid": self.hub.psessionid}
-        self.params = [("r",json.dumps(r)), ("clientid",self.hub.clientid),
-                  ("psessionid", self.hub.psessionid)]
-        self.headers.update(Origin = const.D_ORIGIN)
-        self.headers.update(Referer = const.S_REFERER)
+        self.params = [("r", json.dumps(r)), ("clientid", self.hub.clientid),
+                       ("psessionid", self.hub.psessionid)]
+        self.headers.update(Origin=const.D_ORIGIN)
+        self.headers.update(Referer=const.S_REFERER)
 
         self.delay, self.number = self.hub.get_delay(content)
 
     def callback(self, resp, data):
         logger.info(u"发送好友消息 {0} 给 {1} 成功: {2}"
-                     .format(self.source, self.to_uin, data))
+                    .format(self.source, self.to_uin, data))
 
         self.hub.consume_delay(self.number)
 
 
 class SetSignatureRequest(WebQQRequest):
+
     """ 设置个性签名请求
 
     :param signature: 签名内容
     """
     url = "http://s.web2.qq.com/api/set_long_nick2"
     method = WebQQRequest.METHOD_POST
-    def init(self, signature):
-        self.params = (("r", json.dumps({"nlk":signature, "vfwebqq":self.hub.vfwebqq})),)
-        self.headers.update(Origin = const.S_ORIGIN)
-        self.headers.update(Referer = const.S_REFERER)
 
+    def init(self, signature):
+        self.params = (
+            ("r", json.dumps({"nlk": signature, "vfwebqq": self.hub.vfwebqq})),)
+        self.headers.update(Origin=const.S_ORIGIN)
+        self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
         logger.info(u"设置签名成功: {0}".format(data))
 
 
 class AcceptVerifyRequest(WebQQRequest):
+
     """ 同意好友添加请求
 
     :param uin: 请求人uin
@@ -527,15 +556,14 @@ class AcceptVerifyRequest(WebQQRequest):
     url = "http://s.web2.qq.com/api/allow_and_add2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self, uin, qq_num, markname = ""):
+    def init(self, uin, qq_num, markname=""):
         self.uin = uin
         self.qq_num = qq_num
         self.markname = markname
-        self.params = [("r","{\"account\":%d, \"gid\":0, \"mname\":\"%s\","
-                    " \"vfwebqq\":\"%s\"}" % (qq_num, markname, self.hub.vfwebqq)),]
-        self.headers.update(Origin = const.S_ORIGIN)
-        self.headers.update(Referer = const.S_REFERER)
-
+        self.params = [("r", "{\"account\":%d, \"gid\":0, \"mname\":\"%s\","
+                        " \"vfwebqq\":\"%s\"}" % (qq_num, markname, self.hub.vfwebqq)), ]
+        self.headers.update(Origin=const.S_ORIGIN)
+        self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
         if data.get("retcode") == 0:
@@ -549,7 +577,7 @@ class AcceptVerifyRequest(WebQQRequest):
 FirstRequest = LoginSigRequest
 
 
-def _register_message_handler(func, args_func, msg_type = "message"):
+def _register_message_handler(func, args_func, msg_type="message"):
     """ 注册成功消息器
 
     :param func: 处理器
@@ -559,6 +587,7 @@ def _register_message_handler(func, args_func, msg_type = "message"):
     func._twqq_msg_type = msg_type
     func._args_func = args_func
     return func
+
 
 def group_message_handler(func):
     """ 装饰处理群消息的函数
@@ -571,6 +600,7 @@ def group_message_handler(func):
         from_uin        发送人的uin
         source          消息原包
     """
+
     def args_func(self, message):
         value = message.get("value", {})
         gcode = value.get("group_code")
@@ -592,6 +622,7 @@ def buddy_message_handler(func):
         content          消息内容
         source           消息原包
     """
+
     def args_func(self, message):
         value = message.get("value", {})
         from_uin = value.get("from_uin")
@@ -608,6 +639,7 @@ def kick_message_handler(func):
 
         source      消息原包
     """
+
     def args_func(self, message):
         return message,
     return _register_message_handler(func, args_func, "kick_message")
@@ -623,6 +655,7 @@ def sess_message_handler(func):
         content         消息内容
         source          消息原包
     """
+
     def args_func(self, message):
         value = message.get("value", {})
         id_ = value.get("id")
@@ -644,6 +677,7 @@ def system_message_handler(func):
         account     产生消息的人的qq号
         source      消息原包
     """
+
     def args_func(self, message):
         value = message.get('value')
         return (value.get("type"), value.get("from_uin"), value.get("account"),
@@ -660,9 +694,11 @@ def check_request(request):
     elif isinstance(request, WebQQRequest):
         request = request.__class__
     else:
-        raise ValueError("Request must be a subclass or instance of WebQQRequest")
+        raise ValueError(
+            "Request must be a subclass or instance of WebQQRequest")
 
     return request
+
 
 def register_request_handler(request):
     """ 返回一个装饰器, 用于装饰函数,注册为Request的处理函数
@@ -680,4 +716,3 @@ def register_request_handler(request):
         func._twqq_request = check_request(request)
         return func
     return wrap
-

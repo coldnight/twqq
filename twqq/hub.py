@@ -32,16 +32,20 @@ from .requests import FirstRequest, Login2Request
 
 logger = logging.getLogger("twqq")
 
+
 class RequestHub(object):
+
     """ 集成Request请求和保存请求值
     :param qid: qq号
     :param pwd: 密码
     :param client: ~twqq.client.Client instance
     """
     SIG_RE = re.compile(r'var g_login_sig=encodeURIComponent\("(.*?)"\);')
-    def __init__(self, qid, pwd, client = None, debug = False):
+
+    def __init__(self, qid, pwd, client=None, debug=False):
         self.http = TornadoHTTPClient()
-        self.http.set_user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 Chrome/28.0.1500.71 Safari/537.36")
+        self.http.set_user_agent(
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 Chrome/28.0.1500.71 Safari/537.36")
         self.http.validate_cert = False
         self.http.set_global_headers({"Accept-Charset": "UTF-8,*;q=0.5"})
         self.http.debug = debug
@@ -82,7 +86,7 @@ class RequestHub(object):
         self.friend_info = {}        # 初始化好友列表
         self.group_info = {}         # 初始化组列表
         self.group_sig = {}          # 组签名映射, 用作发送临时消息(sess_message)
-        self.group_members_info = {} # 初始化组成员列表
+        self.group_members_info = {}  # 初始化组成员列表
         self.mark_to_uin = {}        # 备注名->uin的映射
 
         self.message_interval = 0.5  # 消息间隔
@@ -99,7 +103,7 @@ class RequestHub(object):
         :rtype: ~twqq.requests.WebQQRequest instance
         """
         func = self.http.get if request.method == WebQQRequest.METHOD_GET \
-                else self.http.post
+            else self.http.post
 
         if self.stop_poll and isinstance(request, PollMessageRequest):
             logger.info("检测Poll已停止, 此请求不处理: {0}".format(request))
@@ -107,10 +111,10 @@ class RequestHub(object):
 
         kwargs = copy.deepcopy(request.kwargs)
         callback = request.callback if hasattr(request, "callback") and\
-                callable(request.callback) else None
-        kwargs.update(callback = self.wrap(request, callback))
-        kwargs.update(headers = request.headers)
-        kwargs.update(delay = request.delay)
+            callable(request.callback) else None
+        kwargs.update(callback=self.wrap(request, callback))
+        kwargs.update(headers=request.headers)
+        kwargs.update(delay=request.delay)
         logger.debug("KWARGS: {0}".format(kwargs))
 
         if request.ready:
@@ -122,13 +126,11 @@ class RequestHub(object):
 
         return request
 
-
     def handle_pwd(self, r, vcode, huin):
         """ 根据检查返回结果,调用回调生成密码和保存验证码 """
         pwd = md5(md5(self.__pwd).digest() + huin).hexdigest().upper()
         pwd = md5(pwd + vcode).hexdigest().upper()
         return pwd
-
 
     def upload_file(self, filename, path):
         """ 上传文件
@@ -139,7 +141,7 @@ class RequestHub(object):
         form = Form()
         filename = filename.encode("utf-8")
         form.add_file(fieldname='name', filename=filename,
-                        fileHandle=open(path))
+                      fileHandle=open(path))
         img_host = "http://dimg.vim-cn.com/"
         req = urllib2.Request(img_host)
         req.add_header("Content-Type", form.get_content_type())
@@ -148,20 +150,17 @@ class RequestHub(object):
         req.add_data(str(form))
         return urllib2.urlopen(req)
 
-
     def lock(self):
         """ 当输入验证码时锁住
         """
         with open(self._lock_path, 'w'):
             pass
 
-
     def unlock(self):
         """ 解锁
         """
         if os.path.exists(self._lock_path):
             os.remove(self._lock_path)
-
 
     def clean(self):
         """ 清除锁住和等待状态
@@ -191,11 +190,9 @@ class RequestHub(object):
         """
         return os.path.exists(self._wait_path)
 
-
     def _hash(self):
         """  获取好友列表时的Hash """
         return _hash.webqq_hash(self.qid, self.ptwebqq)
-
 
     def start_poll(self):
         """ 开始心跳和拉取信息
@@ -208,10 +205,9 @@ class RequestHub(object):
             self.poll_and_heart = True
             if self.hThread is None:
                 logger.info("开始心跳")
-                self.hThread = threading.Thread(target = self._heartbeat)
+                self.hThread = threading.Thread(target=self._heartbeat)
                 self.hThread.setDaemon(True)
                 self.hThread.start()
-
 
     def _heartbeat(self):
         """ 放入线程的产生心跳
@@ -224,8 +220,6 @@ class RequestHub(object):
                 pass
             time.sleep(60)
 
-
-
     def make_msg_content(self, content):
         """ 构造QQ消息的内容
 
@@ -234,9 +228,8 @@ class RequestHub(object):
         :rtype: str
         """
         self.msg_id += 1
-        return json.dumps([content, ["font", {"name":"Monospace", "size":10,
-                                   "style":[0, 0, 0], "color":"000000"}]])
-
+        return json.dumps([content, ["font", {"name": "Monospace", "size": 10,
+                                              "style": [0, 0, 0], "color":"000000"}]])
 
     def get_delay(self, content):
         """ 根据消息内容是否和上一条内容相同和未送出的消息数目产生延迟
@@ -256,15 +249,14 @@ class RequestHub(object):
             logger.debug(u"间隔 %s 小于 %s, 设置延迟为%s", sub, MIN, delay)
 
         # 如果间隔是已有消息间隔的2倍, 则清除已有消息数
-        #print "sub", sub, "n:", self.last_msg_numbers
-        if self.last_msg_numbers > 0 and sub / (MIN * self.last_msg_numbers)> 1:
+        # print "sub", sub, "n:", self.last_msg_numbers
+        if self.last_msg_numbers > 0 and sub / (MIN * self.last_msg_numbers) > 1:
             self.last_msg_numbers = 0
 
         # 如果还有消息未发送, 则加上他们的间隔
         if self.last_msg_numbers > 0:
             delay += MIN * self.last_msg_numbers
             logger.info(u"有%s条消息未发送, 延迟为 %s", self.last_msg_numbers, delay)
-
 
         n = 1
         # 如果这条消息和上条消息一致, 保险起见再加上一个最小间隔
@@ -278,7 +270,7 @@ class RequestHub(object):
 
         if delay:
             logger.info(u"有 {1} 个消息未投递将会在 {0} 秒后投递"
-                         .format(delay, self.last_msg_numbers))
+                        .format(delay, self.last_msg_numbers))
         # 返回消息累加个数, 在消息发送后减去相应的数目
         return delay, n
 
@@ -290,7 +282,6 @@ class RequestHub(object):
         self.last_msg_numbers -= number
         self.last_msg_time = time.time()
 
-
     def get_group_id(self, uin):
         """ 根据组uin获取组的id
 
@@ -298,8 +289,7 @@ class RequestHub(object):
         """
         return self.group_info.get(uin, {}).get("gid")
 
-
-    def wrap(self, request, func = None):
+    def wrap(self, request, func=None):
         """ 装饰callback
 
         :param request: ~twqq.requests.WebQQRequest instance
@@ -318,12 +308,12 @@ class RequestHub(object):
             if func:
                 func(resp, data, *args, **kwargs)
 
-            funcs = self.client.request_handlers.get(check_request(request), [])
+            funcs = self.client.request_handlers.get(
+                check_request(request), [])
             for f in funcs:
                 f(request, resp, data)
 
         return _wrap
-
 
     def handle_qq_msg_contents(self, contents):
         """ 处理QQ消息内容
@@ -336,11 +326,10 @@ class RequestHub(object):
             if isinstance(row, (str, unicode)):
                 content += row.replace(u"【提示：此用户正在使用Q+"
                                        u" Web：http://web.qq.com/】", "")\
-                        .replace(u"【提示：此用户正在使用Q+"
-                                       u" Web：http://web3.qq.com/】", "")
+                    .replace(u"【提示：此用户正在使用Q+"
+                             u" Web：http://web3.qq.com/】", "")
         return  content.replace("\r", "\n").replace("\r\n", "\n")\
-                .replace("\n\n", "\n")
-
+            .replace("\n\n", "\n")
 
     def get_group_member_nick(self, gcode, uin):
         """ 根据组代码和用户uin获取群成员昵称
@@ -349,7 +338,6 @@ class RequestHub(object):
         :param uin: 群成员uin
         """
         return self.group_members_info.get(gcode, {}).get(uin, {}).get("nick")
-
 
     def dispatch(self, qq_source):
         """ 调度QQ消息
@@ -366,14 +354,12 @@ class RequestHub(object):
                 funcs = self.client.msg_handlers.get(m.get("poll_type"), [])
                 [func(*func._args_func(self, m)) for func in funcs]
 
-
     def relogin(self):
         """ 被T出或获取登出时尝试重新登录
         """
         self.stop_poll = True
         self.poll_and_heart = None
-        self.load_next_request(Login2Request(relogin = True))
-
+        self.load_next_request(Login2Request(relogin=True))
 
     def send_sess_msg(self, qid, to_uin, content):
         """ 发送临时消息
@@ -385,7 +371,6 @@ class RequestHub(object):
         """
         return self.load_next_request(SessMsgRequest(qid, to_uin, content))
 
-
     def send_group_msg(self, group_uin, content):
         """ 发送群消息
 
@@ -394,7 +379,6 @@ class RequestHub(object):
         :rtype: Request instance
         """
         return self.load_next_request(GroupMsgRequest(group_uin, content))
-
 
     def send_buddy_msg(self, to_uin, content):
         """ 发送好友消息
@@ -417,7 +401,7 @@ class RequestHub(object):
             return
         return self.send_buddy_msg(uin, content)
 
-    def accept_verify(self, uin, account, markname = ""):
+    def accept_verify(self, uin, account, markname=""):
         """ 同意验证请求
 
         :param  uin: 请求人uin
