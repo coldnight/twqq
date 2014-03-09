@@ -30,6 +30,7 @@ from .requests import WebQQRequest, PollMessageRequest, HeartbeatRequest
 from .requests import SessMsgRequest, BuddyMsgRequest, GroupMsgRequest
 from .requests import FirstRequest, Login2Request, DiscuMsgRequest
 
+import const
 logger = logging.getLogger("twqq")
 
 
@@ -222,7 +223,7 @@ class RequestHub(object):
                 pass
             time.sleep(60)
 
-    def make_msg_content(self, content):
+    def make_msg_content(self, content, style):
         """ 构造QQ消息的内容
 
         :param content: 小心内容
@@ -231,8 +232,7 @@ class RequestHub(object):
         """
         self.msg_id += 1
         return json.dumps([content,
-                           ["font", {"name": "Monospace", "size": 10,
-                                     "style": [0, 0, 0], "color":"000000"}]])
+                           ["font", style]])
 
     def get_delay(self, content):
         """ 根据消息内容是否和上一条内容相同和未送出的消息数目产生延迟
@@ -376,7 +376,7 @@ class RequestHub(object):
         self.poll_and_heart = None
         self.load_next_request(Login2Request(relogin=True))
 
-    def send_sess_msg(self, qid, to_uin, content):
+    def send_sess_msg(self, qid, to_uin, content, style=const.DEFAULT_STYLE):
         """ 发送临时消息
 
         :param qid: 发送临时消息的qid
@@ -384,33 +384,33 @@ class RequestHub(object):
         :param content: 消息内容
         :rtype: Request instance
         """
-        return self.load_next_request(SessMsgRequest(qid, to_uin, content))
+        return self.load_next_request(SessMsgRequest(qid, to_uin, content, style))
 
-    def send_group_msg(self, group_uin, content):
+    def send_group_msg(self, group_uin, content, style=const.DEFAULT_STYLE):
         """ 发送群消息
 
         :param group_uin: 组的uin
         :param content: 消息内容
         :rtype: Request instance
         """
-        return self.load_next_request(GroupMsgRequest(group_uin, content))
+        return self.load_next_request(GroupMsgRequest(group_uin, content, style))
 
-    def send_discu_msg(self, did, content):
+    def send_discu_msg(self, did, content, style=const.DEFAULT_STYLE):
         """ 发送讨论组消息
 
         :param did: 讨论组id
         :param content: 内容
         """
-        return self.load_next_request(DiscuMsgRequest(did, content))
+        return self.load_next_request(DiscuMsgRequest(did, content, style))
 
-    def send_buddy_msg(self, to_uin, content):
+    def send_buddy_msg(self, to_uin, content, style=const.DEFAULT_STYLE):
         """ 发送好友消息
 
         :param to_uin: 消息接收人
         :param content: 消息内容
         :rtype: Request instance
         """
-        return self.load_next_request(BuddyMsgRequest(to_uin, content))
+        return self.load_next_request(BuddyMsgRequest(to_uin, content, style))
 
     def send_msg_with_markname(self, markname, content):
         """ 使用备注名发送消息
