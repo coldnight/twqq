@@ -438,10 +438,10 @@ class SessMsgRequest(WebQQRequest):
     url = "https://d.web2.qq.com/channel/send_sess_msg2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self, qid, to_uin, content):
+    def init(self, qid, to_uin, content, style):
         self.to = to_uin
         self._content = content
-        self.content = self.hub.make_msg_content(content)
+        self.content = self.hub.make_msg_content(content, style)
         group_sig = self.hub.group_sig.get(to_uin)
         if not group_sig:
             self.ready = False
@@ -475,12 +475,12 @@ class GroupMsgRequest(WebQQRequest):
     url = "http://d.web2.qq.com/channel/send_qun_msg2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self, group_uin, content):
+    def init(self, group_uin, content, style):
         self.delay, self.number = self.hub.get_delay(content)
         self.gid = self.hub.get_group_id(group_uin)
         self.group_uin = group_uin
         self.source = content
-        content = self.hub.make_msg_content(content)
+        content = self.hub.make_msg_content(content, style)
         r = {"group_uin": self.gid, "content": content,
              "msg_id": self.hub.msg_id, "clientid": self.hub.clientid,
              "psessionid": self.hub.psessionid}
@@ -504,11 +504,11 @@ class DiscuMsgRequest(WebQQRequest):
     url = "https://d.web2.qq.com/channel/send_discu_msg2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self, did, content):
+    def init(self, did, content, style):
         self.delay, self.number = self.hub.get_delay(content)
         self.did = did
         self.source = content
-        content = self.hub.make_msg_content(content)
+        content = self.hub.make_msg_content(content, style)
         r = {"did": did, "content": content,
              "msg_id": self.hub.msg_id, "clientid": self.hub.clientid,
              "psessionid": self.hub.psessionid}
@@ -534,10 +534,10 @@ class BuddyMsgRequest(WebQQRequest):
     url = "http://d.web2.qq.com/channel/send_buddy_msg2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self, to_uin, content):
+    def init(self, to_uin, content, style):
         self.to_uin = to_uin
         self.source = content
-        self.content = self.hub.make_msg_content(content)
+        self.content = self.hub.make_msg_content(content, style)
         r = {"to": to_uin, "face": 564, "content": self.content,
              "clientid": self.hub.clientid, "msg_id": self.hub.msg_id,
              "psessionid": self.hub.psessionid}

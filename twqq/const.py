@@ -26,3 +26,6 @@ S_ORIGIN = "http://s.web2.qq.com"
 
 D_REFERER = "https://d.web2.qq.com/cfproxy.html?v=20110331002&callback=1"
 D_ORIGIN = "http://d.web2.qq.com"
+
+DEFAULT_STYLE = {"name": "Monospace", "size": 10,
+                                     "style": [0, 0, 0], "color":"000000"}
