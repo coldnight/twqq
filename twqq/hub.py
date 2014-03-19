@@ -260,7 +260,8 @@ class RequestHub(object):
         # 如果还有消息未发送, 则加上他们的间隔
         if self.last_msg_numbers > 0:
             delay += MIN * self.last_msg_numbers
-            logger.info(u"有%s条消息未发送, 延迟为 %s", self.last_msg_numbers, delay)
+            logger.info(u"有%s条消息未发送, 延迟为 %s",
+                        self.last_msg_numbers, delay)
 
         n = 1
         # 如果这条消息和上条消息一致, 保险起见再加上一个最小间隔
@@ -365,6 +366,7 @@ class RequestHub(object):
 
         if qq_source.get("retcode") == 0:
             messages = qq_source.get("result")
+            logger.info(u"获取消息: {0}".format(messages))
             for m in messages:
                 funcs = self.client.msg_handlers.get(m.get("poll_type"), [])
                 [func(*func._args_func(self, m)) for func in funcs]
@@ -384,7 +386,8 @@ class RequestHub(object):
         :param content: 消息内容
         :rtype: Request instance
         """
-        return self.load_next_request(SessMsgRequest(qid, to_uin, content, style))
+        return self.load_next_request(SessMsgRequest(qid, to_uin, content,
+                                                     style))
 
     def send_group_msg(self, group_uin, content, style=const.DEFAULT_STYLE):
         """ 发送群消息
@@ -393,7 +396,8 @@ class RequestHub(object):
         :param content: 消息内容
         :rtype: Request instance
         """
-        return self.load_next_request(GroupMsgRequest(group_uin, content, style))
+        return self.load_next_request(GroupMsgRequest(group_uin, content,
+                                                      style))
 
     def send_discu_msg(self, did, content, style=const.DEFAULT_STYLE):
         """ 发送讨论组消息
