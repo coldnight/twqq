@@ -314,7 +314,7 @@ class RequestHub(object):
 
         :param uin: 组的uin
         """
-        return self.get_grups().get_gid(uin)
+        return self.get_groups().get_gid(uin)
 
     def get_friend_name(self, uin):
         """ 获取好友名称

@@ -227,11 +227,6 @@ class GroupList(ObjectsBase):
         if item:
             item.set_group_detail(data)
 
-    def get_group_info(self, gcode):
-        item = self.find_group(gcode)
-        if item:
-            return item.ginfo
-
     def get_members(self, gcode):
         """  获取指定组的成员信息
         """
@@ -245,6 +240,11 @@ class GroupList(ObjectsBase):
         item = self.find_group(gcode)
         if item:
             return item.get_member(uin)
+
+    def get_group_name(self, gcode):
+        item = self.find_group(gcode)
+        if item:
+            return item.name
 
     def get_member_nick(self, gcode, uin):
         item = self.find_group(gcode)
