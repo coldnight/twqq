@@ -31,6 +31,8 @@ from .requests import SessMsgRequest, BuddyMsgRequest, GroupMsgRequest
 from .requests import FirstRequest, Login2Request, DiscuMsgRequest
 
 import const
+import objects
+
 logger = logging.getLogger("twqq")
 
 
@@ -152,6 +154,26 @@ class RequestHub(object):
         req.add_header("User-Agent", "curl/python")
         req.add_data(str(form))
         return urllib2.urlopen(req)
+
+    def set_friends(self, data):
+        """ 存储好友信息
+        """
+        self._friends = objects.Friends(data)
+
+    def get_friends(self):
+        return self._friends if hasattr(self, "_friends") else None
+
+    def set_groups(self, data):
+        self._groups = objects.GroupList(data)
+
+    def get_groups(self, data):
+        return self._groups if hasattr(self, "_groups") else None
+
+    def set_discu(self, data):
+        self._discu = objects.DiscuList(data)
+
+    def get_discu(self, data):
+        return self._discu if hasattr(self, "_discu") else None
 
     def lock(self):
         """ 当输入验证码时锁住
