@@ -88,17 +88,17 @@ class RequestHub(object):
         self._lock_path = tempfile.mktemp()
         self._wait_path = tempfile.mktemp()
 
-        self.friend_info = {}        # 初始化好友列表
-        self.group_info = {}         # 初始化组列表
         self.group_sig = {}          # 组签名映射, 用作发送临时消息(sess_message)
-        self.group_members_info = {}  # 初始化组成员列表
-        self.mark_to_uin = {}        # 备注名->uin的映射
 
         self.message_interval = 0.5  # 消息间隔
         self.last_msg_time = time.time()
         self.last_msg_content = None
         self.last_msg_numbers = 0    # 剩余位发送的消息数量
         WebQQRequest.hub = self
+        self.connecting = False
+
+    def connect(self):
+        self.connecting = True
         self.load_next_request(FirstRequest())
 
     def load_next_request(self, request):
@@ -314,18 +314,14 @@ class RequestHub(object):
 
         :param uin: 组的uin
         """
-        return self.group_info.get(uin, {}).get("gid")
+        return self.get_grups().get_gid(uin)
 
     def get_friend_name(self, uin):
         """ 获取好友名称
 
         :param uin: 好友uin
         """
-        info = self.friend_info.get(uin, {})
-        name = info.get("markname")
-        if name is None:
-            name = info.get("nick")
-        return name
+        return self.get_friends().get_show_name()
 
     def wrap(self, request, func=None):
         """ 装饰callback
@@ -375,7 +371,7 @@ class RequestHub(object):
         :param gcode: 组代码
         :param uin: 群成员uin
         """
-        return self.group_members_info.get(gcode, {}).get(uin, {}).get("nick")
+        return self.get_groups().get_member_nick(gcode, uin)
 
     def dispatch(self, qq_source):
         """ 调度QQ消息
@@ -399,6 +395,10 @@ class RequestHub(object):
         self.stop_poll = True
         self.poll_and_heart = None
         self.load_next_request(Login2Request(relogin=True))
+
+    def disconnect(self):
+        self.stop_poll = True
+        self.poll_and_heart = None
 
     def send_sess_msg(self, qid, to_uin, content, style=const.DEFAULT_STYLE):
         """ 发送临时消息
@@ -445,7 +445,7 @@ class RequestHub(object):
         :param content: 消息内容
         :rtype: None or Request instance
         """
-        uin = self.mark_to_uin.get(markname)
+        uin = self.get_friends().get_uin_from_mark(markname)
         if not uin:
             return
         return self.send_buddy_msg(uin, content)

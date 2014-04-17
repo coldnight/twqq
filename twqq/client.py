@@ -146,5 +146,13 @@ class WebQQClient(object):
 
         self.request_handlers = request_handlers
 
+    def connect(self):
+        self.hub.connect()
+
+    def disconnect(self):
+        self.hub.disconnect()
+
     def run(self):
+        if not self.hub.connecting:
+            self.connect()
         self.hub.http.start()

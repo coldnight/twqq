@@ -249,7 +249,12 @@ class GroupList(ObjectsBase):
     def get_member_nick(self, gcode, uin):
         item = self.find_group(gcode)
         if item:
-            return item.get_nick_name(uin)
+            return item.get_show_name(uin)
+
+    def get_gid(self, gcode):
+        item = self.fidn_group(gcode)
+        if item:
+            return item.gid
 
 
 class DiscuMemInfo(ObjectsBase):
@@ -416,6 +421,7 @@ class Friends(ObjectsBase):
     def __init__(self, data):
         self._uin_map = {}
         self._name_map = {}
+        self._mark_uin_map = {}
 
         for item in data.get("info", {}):
             info = FriendInfo(**item)
@@ -429,7 +435,7 @@ class Friends(ObjectsBase):
         for item in data.get("marknames", []):
             uin = item.get("uin")
             self._uin_map[uin].set_markname(item.get("markname"))
-            self._name_map[item.get("markname")] = uin
+            self._mark_uin_map[item.get("markname")] = uin
 
         for item in data.get("vipinfo", []):
             uin = item.get("u")
@@ -448,16 +454,25 @@ class Friends(ObjectsBase):
     def __repr__(self):
         return u"<{0} Friends>".format(len(self.info))
 
-    def get_friend_nick(self, uin):
+    def get_nick(self, uin):
         """ 获取好友信息昵称
         """
         for item in self.info:
             if uin == item.uin:
                 return item.nick
 
-    def get_friend_markname(self, uin):
+    def get_markname(self, uin):
         """ 获取好友备注信息
         """
         for item in self.marknames:
             if uin == item.uin:
                 return item.markname
+
+    def get_show_name(self, uin):
+        m = self.get_markname(uin)
+        if not m:
+            m = self.get_nick(uin)
+        return m
+
+    def get_uin_from_mark(self, mark):
+        return self._mark_uin_map.get(mark)
