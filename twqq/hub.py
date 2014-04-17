@@ -166,13 +166,13 @@ class RequestHub(object):
     def set_groups(self, data):
         self._groups = objects.GroupList(data)
 
-    def get_groups(self, data):
+    def get_groups(self):
         return self._groups if hasattr(self, "_groups") else None
 
     def set_discu(self, data):
         self._discu = objects.DiscuList(data)
 
-    def get_discu(self, data):
+    def get_discu(self):
         return self._discu if hasattr(self, "_discu") else None
 
     def lock(self):

@@ -18,3 +18,6 @@ test.py
 wait
 lock
 doc/_build/
+build/
+twqq.egg-info
+dist/

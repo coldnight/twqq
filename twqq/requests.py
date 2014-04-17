@@ -270,6 +270,12 @@ class FriendListRequest(WebQQRequest):
         self.hub.load_next_request(FriendListRequest(delay=3600, first=False))
 
 
+FriendInfoRequest = FriendListRequest
+import warnings
+warnings.warn("In next version we will rename twqq.requests.FreindInfoRequest "
+              "to twqq.requests.FriendListRequest")
+
+
 class GroupListRequest(WebQQRequest):
 
     """ 获取群列表
@@ -317,7 +323,7 @@ class GroupMembersRequest(WebQQRequest):
         members = data.get("result", {})
         groups = self.hub.get_groups()
         group = groups.find_group(self._gcode)
-        group.set_group_info(self._gcode, members)
+        group.set_group_detail(members)
         logger.debug(u"群详细信息: {0!r}".format(group))
 
         if self._poll:

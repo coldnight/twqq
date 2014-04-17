@@ -152,8 +152,8 @@ class Group(ObjectsBase):
             self._uin_map[uin].mflag = item.get("mflag")
 
     def __repr__(self):
-        return u"<Group {0} have {2} members, Level {3}>"\
-            .format(self.name, len(self.minfo), self.level)
+        return u"<Group {0} have {1} members, Level {2}>"\
+            .format(self.name, len(self._uin_map.keys()), self.level)
 
     def get_nickname(self, uin):
         """ 获取群成员的昵称
@@ -197,9 +197,10 @@ class GroupList(ObjectsBase):
         self._gcode_name_map = {}
         for kw in data.get("gnamelist", []):
             group = Group(**kw)
-            self._gcode_map[kw.get("gcode")] = group
-            self._gid_gcode_map[kw.get("gid")] = kw.get("gcode")
-            self._gcode_name_map[kw.get("name")] = kw.get("gcode")
+            gcode = kw.get("code")
+            self._gcode_map[gcode] = group
+            self._gid_gcode_map[kw.get("gid")] = gcode
+            self._gcode_name_map[kw.get("name")] = gcode
         self.gmasklist = data.get("gmasklist", [])
         self.gnamelist = [Group(**kw) for kw in data.get("gnamelist", [])]
         self.gmarklist = data.get("gmarklist", [])
@@ -214,9 +215,7 @@ class GroupList(ObjectsBase):
         return [x.code for x in self.gnamelist]
 
     def find_group(self, gcode):
-        for item in self.gnamelist:
-            if item.code == gcode:
-                return item
+        return self._gcode_map.get(gcode)
 
     def set_group_info(self, gcode, data):
         """ 设置群信息
@@ -238,7 +237,7 @@ class GroupList(ObjectsBase):
         """
         item = self.find_group(gcode)
         if item:
-            return item.minfo
+            return item._uin_map.values()
 
     def get_member(self, gcode, uin):
         """ 获取指定群成员的信息
@@ -432,8 +431,8 @@ class Friends(ObjectsBase):
             self._uin_map[uin].set_markname(item.get("markname"))
             self._name_map[item.get("markname")] = uin
 
-        for item in data.ge("vipinfo", []):
-            uin = item.get("uin")
+        for item in data.get("vipinfo", []):
+            uin = item.get("u")
             self._uin_map[uin].set_vipinfo(item)
         self.categories = [FriendCate(**kw)
                            for kw in data.get("categories", [])]
