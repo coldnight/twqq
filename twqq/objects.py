@@ -10,6 +10,51 @@
 """
 
 
+class UniqueIds(object):
+    """ 唯一ID
+    为每个好友/群/讨论组/群成员都保持一个唯一标识
+    """
+    T_FRI = 0   # 好友
+    T_TMP = 1   # 临时(群成员)
+    T_GRP = 2   # 群
+    T_DIS = 3   # 讨论组
+
+    _map = {}     # 分配的id 到 uin和type的对应关系
+    _r_map = {}   # uin 和 id 的对应关系
+    _last_id = 0  # 最后一个id, 保持唯一
+
+    @classmethod
+    def alloc(cls, uin, _type):
+        """ 分配一个, uin 是webqq的唯一标识, _type 对应 组/好友/讨论组/群成员
+        并返回这个 id
+        """
+        assert _type in [cls.T_FRI, cls.T_TMP, cls.T_GRP, cls.T_DIS]
+        if uin in cls._r_map:
+            return cls._r_map[uin]
+        else:
+            _id = cls._last_id
+            cls._last_id += 1
+            cls._map[_id] = (uin, _type)
+            cls._r_map[uin] = _id
+            return _id
+
+    @classmethod
+    def get(cls, _id):
+        """ 根据 _id 获取 uin 和对应的类型
+        """
+        return cls._map.get(_id, (None, None))
+
+    @classmethod
+    def get_type(cls, uin):
+        """ 根据 uin 判断该uin 的类型
+        """
+        return cls._map.get(cls._r_map.get(uin), (None, None))[1]
+
+    @classmethod
+    def get_id(cls, uin):
+        return cls._r_map.get(uin)
+
+
 class ObjectsBase(object):
 
     def __init__(self, **kw):
@@ -45,6 +90,7 @@ class GroupMInfo(ObjectsBase):
         self.stat = stat
         self.client_type = client_type
         self.card = card
+        self._id = UniqueIds.alloc(uin, UniqueIds.T_TMP)
 
     def is_manager(self):
         return True if self.mflag == 1 else False
@@ -65,16 +111,6 @@ class VipInfo(ObjectsBase):
         self.is_vip = True if is_vip == 1 else False
 
 
-class GroupCard(ObjectsBase):
-
-    """ 对应群成员中  cards 字段, 用于记录成员的群名片
-    """
-
-    def __init__(self, muin, card):
-        self.muin = muin
-        self.card = card
-
-
 class Group(ObjectsBase):
     def __init__(self, flag, name, gid, code, memo=None, fingermemo=None,
                  createtime=None, level=None, owner=None, option=None,
@@ -93,6 +129,7 @@ class Group(ObjectsBase):
         self.option = option
         self._uin_map = {}   # 群成员 uin 映射
         self._uin_name_map = {}  # 群成员昵称到uin的映射
+        self._id = UniqueIds.alloc(code, UniqueIds.T_GRP)
 
     def set_group_detail(self, data):
         """ 设置组详细信息, 包括群成员信息, 等.
@@ -252,7 +289,7 @@ class GroupList(ObjectsBase):
             return item.get_show_name(uin)
 
     def get_gid(self, gcode):
-        item = self.fidn_group(gcode)
+        item = self.find_group(gcode)
         if item:
             return item.gid
 
@@ -270,6 +307,7 @@ class DiscuMemInfo(ObjectsBase):
         self.nick = nick
         self.status = status
         self.client_type = client_type
+        self._id = UniqueIds.alloc(uin, UniqueIds.T_TMP)
 
 
 class Discu(ObjectsBase):
@@ -289,6 +327,7 @@ class Discu(ObjectsBase):
         self.discu_owner = discu_owner
         self.info_seq = info_seq
         self.mem_list = mem_list
+        self._id = UniqueIds.alloc(did, UniqueIds.T_DIS)
 
     def set_detail(self, info, mem_status, mem_info):
         self.discu_name = info.get("discu_name")
@@ -300,6 +339,11 @@ class Discu(ObjectsBase):
         for item in mem_status:
             self._uin_map[item["uin"]].status = item.get("status")
             self._uin_map[item["uin"]].client_type = item.get("client_type")
+
+    def get_mname(self, uin):
+        item = self._uin_map.get(uin)
+        if item:
+            return item.nick
 
 
 class DiscuList(ObjectsBase):
@@ -328,6 +372,11 @@ class DiscuList(ObjectsBase):
 
     def get_did(self, name):
         return self._did_name_map.get(name)
+
+    def get_mname(self, did, uin):
+        r = self._did_map.get(did)
+        if r:
+            return r.get_mname(uin)
 
 
 class FriendInfo(ObjectsBase):
@@ -389,6 +438,7 @@ class FriendInfo(ObjectsBase):
         self.mobile = mobile
         self.markname = markname
         self.categories = categories
+        self._id = UniqueIds.alloc(uin, UniqueIds.T_FRI)
 
     def set_markname(self, markname):
         self.markname = markname
@@ -457,16 +507,16 @@ class Friends(ObjectsBase):
     def get_nick(self, uin):
         """ 获取好友信息昵称
         """
-        for item in self.info:
-            if uin == item.uin:
-                return item.nick
+        item = self._uin_map.get(uin)
+        if item:
+            return item.nick
 
     def get_markname(self, uin):
         """ 获取好友备注信息
         """
-        for item in self.marknames:
-            if uin == item.uin:
-                return item.markname
+        item = self._uin_map.get(uin)
+        if item:
+            return item.markname
 
     def get_show_name(self, uin):
         m = self.get_markname(uin)
