@@ -233,14 +233,14 @@ class Login2Request(WebQQRequest):
         self.hub.psessionid = data.get("result", {}).get("psessionid")
 
         if not self.relogin:
-            logger.info("登录成功, 开始加载好友消息")
-            self.hub.load_next_request(FriendInfoRequest())
+            logger.info("登录成功, 开始加载好友列表")
+            self.hub.load_next_request(FriendListRequest())
         else:
             logger.info("重新登录成功, 开始拉取消息")
             self.hub.start_poll()
 
 
-class FriendInfoRequest(WebQQRequest):
+class FriendListRequest(WebQQRequest):
 
     """ 加载好友信息
     """
@@ -262,19 +262,18 @@ class FriendInfoRequest(WebQQRequest):
             logger.error("加载好友信息失败, 重新开始登录")
             return self.hub.load_next_request(FirstRequest())
 
-        lst = data.get("result", {}).get("info", [])
-        for info in lst:
-            uin = info.get("uin")
-            self.hub.friend_info[uin] = info
-
-        marknames = data.get("result", {}).get("marknames", [])
-        [self.hub.mark_to_uin.update({minfo.get("markname"): minfo.get("uin")})
-            for minfo in marknames]
-
-        logger.debug("加载好友信息 {0!r}".format(self.hub.friend_info))
+        info = data.get("result", {})
+        friends = self.hub.set_friends(info)
+        logger.info("加载好友信息 {0!r}".format(friends))
         logger.info(data)
         self.hub.load_next_request(GroupListRequest())
-        self.hub.load_next_request(FriendInfoRequest(delay=3600, first=False))
+        self.hub.load_next_request(FriendListRequest(delay=3600, first=False))
+
+
+FriendInfoRequest = FriendListRequest
+import warnings
+warnings.warn("In next version we will rename twqq.requests.FreindInfoRequest "
+              "to twqq.requests.FriendListRequest")
 
 
 class GroupListRequest(WebQQRequest):
@@ -292,15 +291,14 @@ class GroupListRequest(WebQQRequest):
 
     def callback(self, resp, data):
         logger.debug(u"群信息 {0!r}".format(data))
-        group_list = data.get("result", {}).get("gnamelist", [])
-        logger.info(u"群列表: {0!r}".format(group_list))
-        if not group_list:
+        self.hub.set_groups(data.get("result", {}))
+        groups = self.hub.get_groups()
+        logger.info(u"群列表: {0!r}".format(groups))
+        if not groups.gnamelist:
             self.hub.start_poll()
 
-        for i, group in enumerate(group_list):
-            gcode = group.get("code")
+        for i, gcode in enumerate(groups.get_gcodes()):
             self.hub.load_next_request(GroupMembersRequest(gcode, i == 0))
-            self.hub.group_info[gcode] = group
 
 
 class GroupMembersRequest(WebQQRequest):
@@ -322,20 +320,11 @@ class GroupMembersRequest(WebQQRequest):
 
     def callback(self, resp, data):
         logger.debug(u"获取群成员信息 {0!r}".format(data))
-        members = data.get("result", {}).get("minfo", [])
-        self.hub.group_members_info[self._gcode] = {}
-        for m in members:
-            uin = m.get("uin")
-            self.hub.group_members_info[self._gcode][uin] = m
-
-        cards = data.get("result", {}).get("cards", [])
-
-        for card in cards:
-            uin = card.get("muin")
-            group_name = card.get("card")
-            self.hub.group_members_info[self._gcode][uin]["nick"] = group_name
-
-        logger.debug(u"群成员信息: {0!r}".format(self.hub.group_members_info))
+        members = data.get("result", {})
+        groups = self.hub.get_groups()
+        group = groups.find_group(self._gcode)
+        group.set_group_detail(members)
+        logger.debug(u"群详细信息: {0!r}".format(group))
 
         if self._poll:
             self.hub.start_poll()
@@ -493,6 +482,47 @@ class GroupMsgRequest(WebQQRequest):
         logger.info(u"发送群消息 {0} 到 {1} 成功: {2}"
                     .format(self.source, self.group_uin, data))
         self.hub.consume_delay(self.number)
+
+
+class DiscuListRequest(WebQQRequest):
+    """ 获取讨论组列表
+    """
+    url = "http://s.web2.qq.com/api/get_discus_list"
+
+    def init(self):
+        self.params = {"clientid": self.hub.clientid,
+                       "psessionid": self.hub.psessionid,
+                       "vfwebqq": self.hub.vfwebqq,
+                       "t": time.time() * 1000}
+        self.headers.update(Referer=const.S_REFERER)
+
+    def callback(self, resp, data):
+        if data.get("retcode") == 0:
+            self.hub.set_discu(data.get("result", {}))
+
+
+class DiscuInfo(WebQQRequest):
+    """ 获取讨论组详细信息
+
+    :param did: 讨论组id
+    """
+    url = "https://d.web2.qq.com/channel/get_discu_info"
+
+    def init(self, did):
+        self.params = {"clientid": self.hub.clientid,
+                       "did": did,
+                       "psessionid": self.hub.psessionid,
+                       "vfwebqq": self.hub.vfwebqq,
+                       "t": time.time() * 1000}
+        self.headers.update(Referer=const.S_REFERER)
+        self._did = did
+
+    def callback(self, resp, data):
+        if data.get("retcode") == 0:
+            discu = self.hub.get_discu()
+            logger.info("获取讨论组 {0} 的详细信息: {1}"
+                        .format(discu.get_name(self._did), data))
+            discu.set_detail(self._did, data.get("result", {}))
 
 
 class DiscuMsgRequest(WebQQRequest):
