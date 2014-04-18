@@ -29,6 +29,7 @@ from .requests import check_request, AcceptVerifyRequest
 from .requests import WebQQRequest, PollMessageRequest, HeartbeatRequest
 from .requests import SessMsgRequest, BuddyMsgRequest, GroupMsgRequest
 from .requests import FirstRequest, Login2Request, DiscuMsgRequest
+from .requests import FileRequest
 
 import const
 import objects
@@ -388,6 +389,16 @@ class RequestHub(object):
             for m in messages:
                 funcs = self.client.msg_handlers.get(m.get("poll_type"), [])
                 [func(*func._args_func(self, m)) for func in funcs]
+
+    def recv_file(self, guid, lcid, to, callback):
+        """ 接收文件
+
+        :param guid: 文件名
+        :param lcid: 会话id
+        :param to_uin: 发送人uin
+        :param callback:  回调, 接收两个参数, 分别是文件名和文件内容
+        """
+        self.load_next_request(FileRequest(guid, lcid, to, callback))
 
     def relogin(self):
         """ 被T出或获取登出时尝试重新登录

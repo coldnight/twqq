@@ -633,6 +633,38 @@ class AcceptVerifyRequest(WebQQRequest):
             logger.info(u"添加 {0} 失败".format(self.qq_num))
 
 
+class FileRequest(WebQQRequest):
+    """ 下载传送的文件
+
+    :param guid: 文件名
+    :param lcid: 会话id
+    :param to_uin: 发送人uin
+    """
+    url = "http://d.web2.qq.com/channel/get_file2"
+
+    def init(self, guid, lcid, to, callback=None):
+        self.params = {"clientid": self.hub.clientid,
+                       "psessionid": self.hub.psessionid,
+                       "count": 1, "time": int(time.time() * 1000),
+                       "guid": guid, "lcid": lcid, "to": to}
+        self.headers.update(Referer="http://web2.qq.com/webqq.html")
+        self.headers.pop("Origin", None)
+        self.fname = guid
+        self._cb = callback
+
+    def callback(self, response, data):
+        """ 应该在客户端通过::
+
+            @register_request_handler(FileRequest)
+            def callback(resp, data):
+                pass
+
+        来实现文件的保存
+        """
+        if self._cb:
+            self._cb(self.fname, response.body)
+
+
 FirstRequest = LoginSigRequest
 
 
@@ -760,6 +792,48 @@ def discu_message_handler(func):
         return (value.get("did"), value.get("send_uin"), content, message)
 
     return _register_message_handler(func, args_func, "discu_message")
+
+
+def file_message_handler(func):
+    """ 装饰处理文件消息的函数
+
+    处理函数应接受
+        from_uin        文件发送人
+        to_uin          文件接收人
+        lcid            文件sessionid (此处为 session_id 字段)
+        guid            文件名称 (此处为 name 字段)
+        is_cancel       是否是取消发送
+        source          消息源包
+    """
+    def args_func(self, message):
+        value = message.get("value", {})
+        return (value.get("from_uin"), value.get("to_uin"),
+                value.get("session_id"), value.get("name"),
+                value.get("cancel_type", None) == 1,
+                message)
+    return _register_message_handler(func, args_func, "file_message")
+
+
+def offline_file_message_handler(func):
+    """ 装饰处理离线文件的函数
+
+    处理函数应接收
+        from_uin        文件发送人
+        to_uin          文件接收人
+        lcid            文件sessionid (此处为 session_id 字段)
+        count           离线文件数量
+        file_infos      文件信息
+        source          消息源包
+    """
+    warnings.warn(u"WebQQ的离线消息并不可靠, 对方可能发送, 但是收不到")
+
+    def args_func(self, message):
+        value = message.get("value", {})
+        return (value.get("from_uin"), value.get("to_uin"),
+                value.get("lcid"), value.get("count"),
+                value.get("file_infos"), message)
+
+    return _register_message_handler(func, args_func, "filesrv_transfer")
 
 
 def check_request(request):
