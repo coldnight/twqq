@@ -346,7 +346,7 @@ class GroupMembersRequest(WebQQRequest):
         groups = self.hub.get_groups()
         group = groups.find_group(self._gcode)
         group.set_group_detail(members)
-        logger.debug(u"群详细信息: {0!r}".format(group))
+        logger.debug(u"群详细信息: {0}".format(group))
 
         if self._poll:
             self.hub.start_poll()
@@ -565,7 +565,7 @@ class DiscuInfoRequest(WebQQRequest):
     def callback(self, resp, data):
         if data.get("retcode") == 0:
             discu = self.hub.get_discu()
-            logger.info("获取讨论组 {0} 的详细信息: {1}"
+            logger.info(u"获取讨论组 {0} 的详细信息: {1}"
                         .format(discu.get_name(self._did), data))
             discu.set_detail(self._did, data.get("result", {}))
 

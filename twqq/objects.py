@@ -186,11 +186,16 @@ class Group(ObjectsBase):
 
         for item in members:
             uin = item.get("muin")
-            self._uin_map[uin].mflag = item.get("mflag")
+            tmp = self._uin_map.get(uin)
+            if tmp:
+                tmp.mflag = item.get("mflag")
 
     def __repr__(self):
         return u"<Group {0} have {1} members, Level {2}>"\
             .format(self.name, len(self._uin_map.keys()), self.level)
+
+    def __unicode__(self):
+        return self.__repr__()
 
     def get_nickname(self, uin):
         """ 获取群成员的昵称
@@ -245,8 +250,8 @@ class GroupList(ObjectsBase):
     def __repr__(self):
         return str([x.name for x in self.gnamelist])
 
-    def __str__(self):
-        return self.__repr__()
+    def __unicode__(self):
+        return self.__repr__().decode("utf-8")
 
     @property
     def groups(self):
