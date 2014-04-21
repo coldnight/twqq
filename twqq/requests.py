@@ -268,6 +268,7 @@ class FriendListRequest(WebQQRequest):
         logger.info(data)
         self.hub.load_next_request(GroupListRequest())
         self.hub.load_next_request(FriendStatusRequest())
+        self.hub.load_next_request(DiscuListRequest())
         self.hub.load_next_request(FriendListRequest(delay=3600, first=False))
 
 
@@ -397,11 +398,10 @@ class PollMessageRequest(WebQQRequest):
                 return
 
             logger.info(u"获取消息: {0!r}".format(data))
+            self.hub.load_next_request(PollMessageRequest())
             self.hub.dispatch(data)
         except Exception as e:
             logger.error(u"消息获取异常: {0}".format(e), exc_info=True)
-        finally:
-            self.hub.load_next_request(PollMessageRequest())
 
 
 class SessGroupSigRequest(WebQQRequest):
@@ -518,8 +518,12 @@ class DiscuListRequest(WebQQRequest):
         self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
+        logger.info(u"获取讨论组列表: {0!r}".format(data))
         if data.get("retcode") == 0:
             self.hub.set_discu(data.get("result", {}))
+            dids = self.hub.get_discu().dids
+            for did in dids:
+                self.hub.load_next_request(DiscuInfoRequest(did))
 
 
 class QQNumberRequest(WebQQRequest):
@@ -542,7 +546,7 @@ class QQNumberRequest(WebQQRequest):
             self.hub.get_friends().set_account(uin, account)
 
 
-class DiscuInfo(WebQQRequest):
+class DiscuInfoRequest(WebQQRequest):
     """ 获取讨论组详细信息
 
     :param did: 讨论组id
@@ -831,8 +835,8 @@ def discu_message_handler(func):
         value = message.get("value")
         from_uin = value.get("send_uin")
         did = value.get("did")
-        content = self.handle_qq_msg_contents(from_uin,
-                                              value.get("content", []), did)
+        content = self.handle_qq_msg_contents(
+            from_uin, value.get("content", []), did, 1)
         return (did, from_uin, content, message)
 
     return _register_message_handler(func, args_func, "discu_message")

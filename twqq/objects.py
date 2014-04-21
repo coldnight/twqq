@@ -368,7 +368,7 @@ class DiscuList(ObjectsBase):
 
     @property
     def discus(self):
-        return [x for x in self._dic_map.values()]
+        return [x for x in self._did_map.values()]
 
     def get_name(self, did):
         r = self._did_map.get(did)
