@@ -346,8 +346,10 @@ class Discu(ObjectsBase):
             self._uin_map[item["uin"]] = DiscuMemInfo(**item)
 
         for item in mem_status:
-            self._uin_map[item["uin"]].status = item.get("status")
-            self._uin_map[item["uin"]].client_type = item.get("client_type")
+            tmp = self._uin_map.get(item["uin"])
+            if tmp:
+                tmp.status = item.get("status")
+                tmp.client_type = item.get("client_type")
 
     def get_mname(self, uin):
         item = self._uin_map.get(uin)
