@@ -738,7 +738,7 @@ def group_message_handler(func):
         gcode = value.get("group_code")
         uin = value.get("send_uin")
         contents = value.get("content", [])
-        content = self.handle_qq_msg_contents(uin, contents)
+        content = self.handle_qq_msg_contents(uin, contents, gcode)
         uname = self.get_group_member_nick(gcode, uin)
         return uname, content, gcode, uin, message
 
@@ -830,9 +830,10 @@ def discu_message_handler(func):
     def args_func(self, message):
         value = message.get("value")
         from_uin = value.get("send_uin")
+        did = value.get("did")
         content = self.handle_qq_msg_contents(from_uin,
-                                              value.get("content", []))
-        return (value.get("did"), from_uin, content, message)
+                                              value.get("content", []), did)
+        return (did, from_uin, content, message)
 
     return _register_message_handler(func, args_func, "discu_message")
 

@@ -226,6 +226,35 @@ class RequestHub(object):
             f.write(body)
         return self.upload_file(path)
 
+    def get_group_img(self, gid, from_uin, file_id, server, name, key):
+        """ 获取群发送的图片
+        """
+        ip, port = server.split(":")
+        url = "http://web2.qq.com/cgi-bin/get_group_pic"
+        params = {"type": 0, "fid": file_id, "gid": gid, "pic": name,
+                  "rip": ip, "rport": port, "uin": from_uin,
+                  "vfwebqq": self.vfwebqq}
+        url = url + "?" + urllib.urlencode(params)
+        headers = {
+            "User-Agent":
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+            " (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 "
+            "Chrome/28.0.1500.71 Safari/537.36",
+            "Referer":  "http://web2.qq.com/webqq.html"}
+        curl, buff = self.generate_curl(url, headers)
+        try:
+            curl.perform()
+        except:
+            logger.warn(u"获取群聊天图片错误", exc_info=True)
+            return
+        body = buff.getvalue()
+        buff.close()
+        curl.close()
+        path = tempfile.mktemp()
+        with open(path, 'w') as f:
+            f.write(body)
+        return self.upload_file(path)
+
     def set_friends(self, data):
         """ 存储好友信息
         """
@@ -460,19 +489,30 @@ class RequestHub(object):
 
         return _wrap
 
-    def handle_qq_msg_contents(self, from_uin, contents):
+    def handle_qq_msg_contents(self, from_uin, contents, eid=None):
         """ 处理QQ消息内容
 
+        :param from_uin: 消息发送人uin
         :param contents: 内容
+        :param eid: 扩展id(群gid, 讨论组did)
         :type contents: list
+
         """
         content = ""
         for row in contents:
 
-            if isinstance(row, (list)) and len(row) == 2 and row[0] == "offpic":
+            if isinstance(row, (list)) and len(row) == 2:
                 info = row[1]
-                file_path = info.get("file_path")
-                content += self.get_msg_img(from_uin, file_path)
+                if row[0] == "offpic":
+                    file_path = info.get("file_path")
+                    content += self.get_msg_img(from_uin, file_path)
+                if row[0] == "cface":
+                    name = info.get("name")
+                    key = info.get("key")
+                    file_id = info.get("file_id")
+                    server = info.get("server")
+                    content += self.get_group_img(eid, from_uin, file_id,
+                                                  server, name, key)
 
             if isinstance(row, (str, unicode)):
                 content += row.replace(u"【提示：此用户正在使用Q+"
