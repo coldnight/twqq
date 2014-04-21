@@ -14,9 +14,9 @@ class UniqueIds(object):
     """ 唯一ID
     为每个好友/群/讨论组/群成员都保持一个唯一标识
     """
-    T_FRI = 0   # 好友
-    T_TMP = 1   # 临时(群成员)
-    T_GRP = 2   # 群
+    T_FRI = 1   # 好友
+    T_TMP = 0   # 临时(群成员)
+    T_GRP = 4   # 群
     T_DIS = 3   # 讨论组
 
     _map = {}     # 分配的id 到 uin和type的对应关系
@@ -416,13 +416,15 @@ class FriendInfo(ObjectsBase):
     :param mobile: 手机
     :param markname: 备注名
     :param categories: 分类id
+    :param account: QQ号
     """
     def __init__(self, uin, face, flag, nick, birthday=None,
                  occpation=None, phone=None, allow=None, colleage=None,
                  constel=None, blood=None, homepage=None, status=None,
                  vip_info=None, country=None, city=None, personal=None,
                  shengxiao=None, email=None, client_type=None, province=None,
-                 gender=None, mobile=None, markname=None, categories=None):
+                 gender=None, mobile=None, markname=None, categories=None,
+                 account=None):
         self.face = face
         self.flag = flag
         self.nick = nick
@@ -448,6 +450,7 @@ class FriendInfo(ObjectsBase):
         self.mobile = mobile
         self.markname = markname
         self.categories = categories
+        self.account = account
         self._id = UniqueIds.alloc(uin, UniqueIds.T_FRI)
 
     def set_markname(self, markname):
@@ -542,3 +545,13 @@ class Friends(ObjectsBase):
         if item:
             item.status = status
             item.client_type = client_type
+
+    def set_account(self, uin, account):
+        item = self._uin_map.get(uin)
+        if item:
+            item.account = account
+
+    def get_account(self, uin):
+        item = self._uin_map.get(uin)
+        if item:
+            return item.account

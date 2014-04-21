@@ -12,14 +12,17 @@ import time
 import copy
 import json
 import random
+import urllib
 import urllib2
 import logging
 import tempfile
 import threading
 
-import _hash
 
 from hashlib import md5
+from cStringIO import StringIO
+
+import pycurl
 
 from tornado.stack_context import ExceptionStackContext
 from tornadohttpclient import UploadForm as Form
@@ -31,6 +34,7 @@ from .requests import SessMsgRequest, BuddyMsgRequest, GroupMsgRequest
 from .requests import FirstRequest, Login2Request, DiscuMsgRequest
 from .requests import FileRequest
 
+import _hash
 import const
 import objects
 
@@ -181,6 +185,52 @@ class RequestHub(object):
         """
         with open(self._lock_path, 'w'):
             pass
+
+    def get_account(self, uin, _type=1):
+        """ 获取好友QQ号
+        :param _type: 类型, 1 是好友, 4 是群
+        """
+        # self.load_next_request(QQNumberRequest())
+        ret = self.get_friends().get_account(uin)
+        if ret:
+            return ret
+        curl = pycurl.Curl()
+        buff = StringIO()
+
+        curl.setopt(pycurl.COOKIEFILE, "cookie")
+        curl.setopt(pycurl.COOKIEJAR, "cookie_jar")
+        curl.setopt(pycurl.SHARE, self.http._share)
+
+        url = "http://s.web2.qq.com/api/get_friend_uin2"
+        params = {"code": "", "t": time.time() * 1000, "tuin": uin,
+                  "type": _type, "verifysession": "", "vfwebqq": self.vfwebqq}
+        url = url + "?" + urllib.urlencode(params)
+        curl.setopt(pycurl.URL, url)
+        headers = [
+            "User-Agent:"
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+            " (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 "
+            "Chrome/28.0.1500.71 Safari/537.36",
+            "Referer:" + const.S_REFERER]
+        curl.setopt(pycurl.HTTPHEADER, headers)
+        curl.setopt(pycurl.WRITEFUNCTION, buff.write)
+        try:
+            curl.perform()
+            ret = buff.getvalue()
+            buff.close()
+            data = json.loads(ret)
+        except:
+            logger.warn(u"获取QQ号时发生错误", exc_info=True)
+            return
+
+        if data.get("retcode") == 0:
+            logger.info(u"获取QQ号码成功: {0!r}".format(data))
+            ret = data.get("result")
+            uin = ret.get("uin")
+            account = ret.get("account")
+            self.get_friends().set_account(uin, account)
+            return account
+        logger.warn(u"获取QQ号码失败: {0!r}".format(data))
 
     def unlock(self):
         """ 解锁

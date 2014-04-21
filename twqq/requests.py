@@ -522,6 +522,26 @@ class DiscuListRequest(WebQQRequest):
             self.hub.set_discu(data.get("result", {}))
 
 
+class QQNumberRequest(WebQQRequest):
+    """ 查看好友QQ号码
+    """
+    url = "http://s.web2.qq.com/api/get_friend_uin2"
+
+    def init(self, uin):
+        self.params = {"code": "", "t": time.time() * 1000,
+                       "tuin": uin, "type": 0,
+                       "verifysession": "",
+                       "vfwebqq": self.hub.vfwebqq}
+        self.headers.update(Referer=const.S_REFERER)
+
+    def callback(self, response, data):
+        if isinstance(data, dict) and data.get("retcode") == 0:
+            r = data.get('result')
+            uin = r.get("uin")
+            account = r.get("account")
+            self.hub.get_friends().set_account(uin, account)
+
+
 class DiscuInfo(WebQQRequest):
     """ 获取讨论组详细信息
 
