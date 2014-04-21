@@ -12,20 +12,27 @@ import time
 import copy
 import json
 import random
-import urllib
-import urllib2
+
+try:
+    import urllib
+except ImportError:
+    import urllib.parse as urllib
+
 import logging
 import tempfile
 import threading
 
 
 from hashlib import md5
-from cStringIO import StringIO
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import pycurl
 
 from tornado.stack_context import ExceptionStackContext
-from tornadohttpclient import UploadForm as Form
 from tornadohttpclient import TornadoHTTPClient
 
 from .requests import check_request, AcceptVerifyRequest
@@ -142,23 +149,82 @@ class RequestHub(object):
         pwd = md5(pwd + vcode).hexdigest().upper()
         return pwd
 
-    def upload_file(self, filename, path):
+    def upload_file(self, path):
         """ 上传文件
 
-        :param filename: 文件名
         :param path: 文件路径
         """
-        form = Form()
-        filename = filename.encode("utf-8")
-        form.add_file(fieldname='name', filename=filename,
-                      fileHandle=open(path))
         img_host = "http://dimg.vim-cn.com/"
-        req = urllib2.Request(img_host)
-        req.add_header("Content-Type", form.get_content_type())
-        req.add_header("Content-Length", len(str(form)))
-        req.add_header("User-Agent", "curl/python")
-        req.add_data(str(form))
-        return urllib2.urlopen(req)
+        curl, buff = self.generate_curl(img_host)
+        curl.setopt(pycurl.POST, 1)
+        curl.setopt(pycurl.HTTPPOST, [('name', (pycurl.FORM_FILE, path)), ])
+        try:
+            curl.perform()
+            ret = buff.getvalue()
+            curl.close()
+            buff.close()
+        except:
+            logger.warn(u"上传图片错误", exc_info=True)
+        return ret
+
+    def generate_curl(self, url=None, headers=None):
+        """ 生成一个curl, 返回 curl 实例和用于获取结果的 buffer
+        """
+        curl = pycurl.Curl()
+        buff = StringIO()
+
+        curl.setopt(pycurl.COOKIEFILE, "cookie")
+        curl.setopt(pycurl.COOKIEJAR, "cookie_jar")
+        curl.setopt(pycurl.SHARE, self.http._share)
+        curl.setopt(pycurl.WRITEFUNCTION, buff.write)
+        curl.setopt(pycurl.FOLLOWLOCATION, 1)
+        curl.setopt(pycurl.MAXREDIRS, 5)
+
+        if url:
+            curl.setopt(pycurl.URL, url)
+
+        if headers:
+            self.set_curl_headers(curl, headers)
+
+        return curl, buff
+
+    def set_curl_headers(self, curl, headers):
+        """ 将一个字典设置为 curl 的头
+        """
+        h = []
+        for key, val in headers.items():
+            h.append("{0}: {1}".format(key, val))
+        curl.setopt(pycurl.HTTPHEADER, h)
+
+    def get_msg_img(self, from_uin, file_path):
+        """ 获取聊天信息中的图片
+        """
+        url = "http://d.web2.qq.com/channel/get_offpic2"
+        params = {"clientid": self.clientid, "f_uin": from_uin,
+                  "file_path": file_path, "psessionid": self.psessionid}
+        url = url + "?" + urllib.urlencode(params)
+        headers = {}
+
+        headers = {
+            "User-Agent":
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+            " (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 "
+            "Chrome/28.0.1500.71 Safari/537.36",
+            "Referer":  "http://web2.qq.com/webqq.html"}
+        curl, buff = self.generate_curl(url, headers)
+        try:
+            curl.perform()
+        except:
+            logger.warn(u"获取聊天图片错误", exc_info=True)
+            return
+        body = buff.getvalue()
+        curl.close()
+        buff.close()
+
+        path = tempfile.mktemp()
+        with open(path, 'w') as f:
+            f.write(body)
+        return self.upload_file(path)
 
     def set_friends(self, data):
         """ 存储好友信息
@@ -194,31 +260,25 @@ class RequestHub(object):
         ret = self.get_friends().get_account(uin)
         if ret:
             return ret
-        curl = pycurl.Curl()
-        buff = StringIO()
-
-        curl.setopt(pycurl.COOKIEFILE, "cookie")
-        curl.setopt(pycurl.COOKIEJAR, "cookie_jar")
-        curl.setopt(pycurl.SHARE, self.http._share)
 
         url = "http://s.web2.qq.com/api/get_friend_uin2"
         params = {"code": "", "t": time.time() * 1000, "tuin": uin,
                   "type": _type, "verifysession": "", "vfwebqq": self.vfwebqq}
         url = url + "?" + urllib.urlencode(params)
-        curl.setopt(pycurl.URL, url)
-        headers = [
-            "User-Agent:"
+        headers = {
+            "User-Agent":
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
             " (KHTML, like Gecko) Ubuntu Chromium/28.0.1500.71 "
             "Chrome/28.0.1500.71 Safari/537.36",
-            "Referer:" + const.S_REFERER]
-        curl.setopt(pycurl.HTTPHEADER, headers)
-        curl.setopt(pycurl.WRITEFUNCTION, buff.write)
+            "Referer":  const.S_REFERER}
+        curl, buff = self.generate_curl(url, headers)
+
         try:
             curl.perform()
             ret = buff.getvalue()
             buff.close()
             data = json.loads(ret)
+            curl.close()
         except:
             logger.warn(u"获取QQ号时发生错误", exc_info=True)
             return
@@ -400,7 +460,7 @@ class RequestHub(object):
 
         return _wrap
 
-    def handle_qq_msg_contents(self, contents):
+    def handle_qq_msg_contents(self, from_uin, contents):
         """ 处理QQ消息内容
 
         :param contents: 内容
@@ -408,6 +468,12 @@ class RequestHub(object):
         """
         content = ""
         for row in contents:
+
+            if isinstance(row, (list)) and len(row) == 2 and row[0] == "offpic":
+                info = row[1]
+                file_path = info.get("file_path")
+                content += self.get_msg_img(from_uin, file_path)
+
             if isinstance(row, (str, unicode)):
                 content += row.replace(u"【提示：此用户正在使用Q+"
                                        u" Web：http://web.qq.com/】", "")\
