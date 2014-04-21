@@ -387,8 +387,13 @@ class RequestHub(object):
             messages = qq_source.get("result")
             logger.info(u"获取消息: {0}".format(messages))
             for m in messages:
-                funcs = self.client.msg_handlers.get(m.get("poll_type"), [])
-                [func(*func._args_func(self, m)) for func in funcs]
+                poll_type = m.get("poll_type")
+                if poll_type == "buddies_status_change":
+                    self.get_friends().set_status(**m.get("value", {}))
+                else:
+                    funcs = self.client.msg_handlers.get(m.get("poll_type"),
+                                                         [])
+                    [func(*func._args_func(self, m)) for func in funcs]
 
     def recv_file(self, guid, lcid, to, callback):
         """ 接收文件

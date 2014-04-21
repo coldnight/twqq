@@ -248,6 +248,10 @@ class GroupList(ObjectsBase):
     def __str__(self):
         return self.__repr__()
 
+    @property
+    def groups(self):
+        return [x for x in self._gcode_map.values()]
+
     def get_gcodes(self):
         return [x.code for x in self.gnamelist]
 
@@ -362,6 +366,10 @@ class DiscuList(ObjectsBase):
     def dids(self):
         return self._did_map.keys()
 
+    @property
+    def discus(self):
+        return [x for x in self._dic_map.values()]
+
     def get_name(self, did):
         r = self._did_map.get(did)
         if r:
@@ -383,7 +391,9 @@ class FriendInfo(ObjectsBase):
 
     """ 好友信息抽象
 
+    :param uin: 唯一标识
     :param face: 头像
+    :param nick: 昵称
     :param birthday: 生日
     :param occpation:
     :param phone: 手机号
@@ -409,7 +419,7 @@ class FriendInfo(ObjectsBase):
     """
     def __init__(self, uin, face, flag, nick, birthday=None,
                  occpation=None, phone=None, allow=None, colleage=None,
-                 constel=None, blood=None, homepage=None, stat=None,
+                 constel=None, blood=None, homepage=None, status=None,
                  vip_info=None, country=None, city=None, personal=None,
                  shengxiao=None, email=None, client_type=None, province=None,
                  gender=None, mobile=None, markname=None, categories=None):
@@ -425,7 +435,7 @@ class FriendInfo(ObjectsBase):
         self.constel = constel
         self.blood = blood
         self.homepage = homepage
-        self.stat = stat
+        self.status = status
         self.vip_info = vip_info
         self.country = country
         self.city = city
@@ -526,3 +536,9 @@ class Friends(ObjectsBase):
 
     def get_uin_from_mark(self, mark):
         return self._mark_uin_map.get(mark)
+
+    def set_status(self, uin, status, client_type):
+        item = self._uin_map.get(uin)
+        if item:
+            item.status = status
+            item.client_type = client_type

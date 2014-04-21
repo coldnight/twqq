@@ -267,6 +267,7 @@ class FriendListRequest(WebQQRequest):
         logger.info("加载好友信息 {0!r}".format(friends))
         logger.info(data)
         self.hub.load_next_request(GroupListRequest())
+        self.hub.load_next_request(FriendStatusRequest())
         self.hub.load_next_request(FriendListRequest(delay=3600, first=False))
 
 
@@ -274,6 +275,26 @@ FriendInfoRequest = FriendListRequest
 import warnings
 warnings.warn("In next version we will rename twqq.requests.FreindInfoRequest "
               "to twqq.requests.FriendListRequest")
+
+
+class FriendStatusRequest(WebQQRequest):
+
+    """ 获取在线好友状态
+    """
+
+    url = "https://d.web2.qq.com/channel/get_online_buddies2"
+
+    def init(self):
+        self.params = {"clientid": self.hub.clientid,
+                       "psessionid": self.hub.psessionid,
+                       "t": int(time.time() * 1000)}
+        self.headers.update(Referer=const.D_REFERER)
+
+    def callback(self, response, data):
+        logger.info(u"加载好友状态信息: {0!r}".format(data))
+        if isinstance(data, dict) and data.get("retcode") == 0:
+            for item in data.get('result', []):
+                self.hub.get_friends().set_status(**item)
 
 
 class GroupListRequest(WebQQRequest):
