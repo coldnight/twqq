@@ -721,7 +721,7 @@ class LogoutRequset(WebQQRequest):
     url = "https://d.web2.qq.com/channel/logout2"
 
     def init(self):
-        self.params = {"clientid": self.clientid, "ids": "",
+        self.params = {"clientid": self.hub.clientid, "ids": "",
                        "psessionid": self.hub.psessionid,
                        "t": int(time.time() * 1000)}
         self.headers.update(Referer=const.D_REFERER)
