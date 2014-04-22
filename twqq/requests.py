@@ -341,12 +341,13 @@ class GroupMembersRequest(WebQQRequest):
         self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
-        logger.debug(u"获取群成员信息 {0!r}".format(data))
-        members = data.get("result", {})
-        groups = self.hub.get_groups()
-        group = groups.find_group(self._gcode)
-        group.set_group_detail(members)
-        logger.debug(u"群详细信息: {0}".format(group))
+        if isinstance(data, dict) and data.get("retcode") == 0:
+            logger.debug(u"获取群成员信息 {0!r}".format(data))
+            members = data.get("result", {})
+            groups = self.hub.get_groups()
+            group = groups.find_group(self._gcode)
+            group.set_group_detail(members)
+            logger.debug(u"群详细信息: {0}".format(group))
 
         if self._poll:
             self.hub.start_poll()
