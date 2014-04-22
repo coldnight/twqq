@@ -710,6 +710,22 @@ class FileRequest(WebQQRequest):
             self._cb(self.fname, response.body)
 
 
+class LogoutRequset(WebQQRequest):
+    """ 登出请求
+    """
+    url = "https://d.web2.qq.com/channel/logout2"
+
+    def init(self):
+        self.params = {"clientid": self.clientid, "ids": "",
+                       "psessionid": self.hub.psessionid,
+                       "t": int(time.time() * 1000)}
+        self.headers.update(Referer=const.D_REFERER)
+
+    def callback(self, resp, data):
+        if data.get("retcode") == 0:
+            logger.info(u"登出成功")
+
+
 FirstRequest = LoginSigRequest
 
 

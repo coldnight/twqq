@@ -39,7 +39,7 @@ from .requests import check_request, AcceptVerifyRequest
 from .requests import WebQQRequest, PollMessageRequest, HeartbeatRequest
 from .requests import SessMsgRequest, BuddyMsgRequest, GroupMsgRequest
 from .requests import FirstRequest, Login2Request, DiscuMsgRequest
-from .requests import FileRequest
+from .requests import FileRequest, LogoutRequset
 
 import _hash
 import const
@@ -572,6 +572,7 @@ class RequestHub(object):
     def disconnect(self):
         self.stop_poll = True
         self.poll_and_heart = None
+        self.load_next_request(LogoutRequset())
 
     def send_sess_msg(self, qid, to_uin, content, style=const.DEFAULT_STYLE):
         """ 发送临时消息
