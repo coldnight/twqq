@@ -388,6 +388,7 @@ class PollMessageRequest(WebQQRequest):
         self.ready = not self.hub.stop_poll
 
     def callback(self, resp, data):
+        polled = False
         try:
             if not data:
                 return
@@ -399,9 +400,13 @@ class PollMessageRequest(WebQQRequest):
 
             logger.info(u"获取消息: {0!r}".format(data))
             self.hub.load_next_request(PollMessageRequest())
+            polled = True
             self.hub.dispatch(data)
         except Exception as e:
             logger.error(u"消息获取异常: {0}".format(e), exc_info=True)
+        finally:
+            if not polled:
+                self.hub.load_next_request(PollMessageRequest())
 
 
 class SessGroupSigRequest(WebQQRequest):
