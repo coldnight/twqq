@@ -181,8 +181,8 @@ class RequestHub(object):
         curl.setopt(pycurl.WRITEFUNCTION, buff.write)
         curl.setopt(pycurl.FOLLOWLOCATION, 1)
         curl.setopt(pycurl.MAXREDIRS, 5)
-        curl.setopt(pycurl.TIMEOUT, 1)
-        curl.setopt(pycurl.CONNECTTIMEOUT, 1)
+        curl.setopt(pycurl.TIMEOUT, 3)
+        curl.setopt(pycurl.CONNECTTIMEOUT, 3)
 
         if url:
             curl.setopt(pycurl.URL, url)
