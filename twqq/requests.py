@@ -692,8 +692,8 @@ class AcceptVerifyRequest(WebQQRequest):
     def callback(self, resp, data):
         if data.get("retcode") == 0:
             logger.info(u"添加 {0} 成功".format(self.qq_num))
-            if self.markname:
-                self.hub.mark_to_uin[self.markname] = self.uin
+            # if self.markname:
+            #     self.hub.mark_to_uin[self.markname] = self.uin
         else:
             logger.info(u"添加 {0} 失败".format(self.qq_num))
 
