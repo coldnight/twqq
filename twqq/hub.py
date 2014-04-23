@@ -220,7 +220,7 @@ class RequestHub(object):
             curl.perform()
         except:
             logger.warn(u"获取聊天图片错误", exc_info=True)
-            return
+            return u"[图片获取失败]"
         body = buff.getvalue()
         curl.close()
         buff.close()
