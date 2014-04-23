@@ -249,7 +249,7 @@ class FriendListRequest(WebQQRequest):
 
     def init(self, first=True, manual=False):
         self.is_first = first
-        self.manual = False
+        self.manual = manual
         self.params = [("r", json.dumps({"h": "hello",
                                          "hash": self.hub._hash(),
                                          "vfwebqq": self.hub.vfwebqq}))]

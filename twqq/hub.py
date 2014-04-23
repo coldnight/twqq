@@ -638,7 +638,7 @@ class RequestHub(object):
                                                           markname))
 
     def refresh_friend_info(self):
-        self.load_next_request(FriendListRequest(False, True))
+        self.load_next_request(FriendListRequest(manual=True))
 
     def refresh_group_info(self, _id):
         """ 手动刷新某个群的信息
