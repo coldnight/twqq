@@ -419,7 +419,7 @@ class SessGroupSigRequest(WebQQRequest):
 
     """ 获取临时消息群签名请求
 
-    :param qid: 临时签名对应的qid
+    :param qid: 临时签名对应的qid(对应群的gid)
     :param to_uin: 临时消息接收人uin
     :param sess_reqeust: 发起临时消息的请求
     """

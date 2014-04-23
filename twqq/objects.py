@@ -155,6 +155,14 @@ class Group(ObjectsBase):
 
         self.set_detail_info(**data.get("ginfo", {}))
 
+    def __iter__(self):
+        """ 迭代返回成员的 uin
+        """
+        if hasattr(dict, "iterkeys"):
+            return self._uin_map.iterkeys()
+        else:
+            return self._uin_map.keys()
+
     def set_detail_info(self, face, memo, fingermemo, code, createtime,
                         flag, level, name, gid, owner, option, members, **kw):
         """ 组成员信息中对应 ginfo 中的元素
@@ -252,6 +260,14 @@ class GroupList(ObjectsBase):
 
     def __unicode__(self):
         return self.__repr__().decode("utf-8")
+
+    def __iter__(self):
+        """ 迭代返回群对象
+        """
+        if hasattr(dict, "iterkeys"):
+            return self._gcode_map.iterkeys()
+        else:
+            return self._gcode_map.keys()
 
     @property
     def groups(self):

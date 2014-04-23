@@ -647,8 +647,10 @@ class RequestHub(object):
         """
         gcode, _type = objects.UniqueIds.get(int(_id))
         if gcode is None or _type is None:
-            return False
+            return False, u"没有找到对象"
+
         if _type != objects.UniqueIds.T_GRP:
-            return False
+            return False, u"该对象不是群"
+
         self.load_next_request(GroupMembersRequest(gcode))
-        return True
+        return True, self.get_groups().get_group_name(gcode)
