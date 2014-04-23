@@ -39,7 +39,8 @@ from .requests import check_request, AcceptVerifyRequest
 from .requests import WebQQRequest, PollMessageRequest, HeartbeatRequest
 from .requests import SessMsgRequest, BuddyMsgRequest, GroupMsgRequest
 from .requests import FirstRequest, Login2Request, DiscuMsgRequest
-from .requests import FileRequest, LogoutRequset
+from .requests import FileRequest, LogoutRequset, FriendListRequest
+from .requests import GroupMembersRequest
 
 import _hash
 import const
@@ -635,3 +636,19 @@ class RequestHub(object):
         """
         return self.load_next_request(AcceptVerifyRequest(uin, account,
                                                           markname))
+
+    def refresh_friend_info(self):
+        self.load_next_request(FriendListRequest(False, True))
+
+    def refresh_group_info(self, _id):
+        """ 手动刷新某个群的信息
+
+        :param _id: 对应群生成的唯一id
+        """
+        gcode, _type = objects.UniqueIds.get(int(_id))
+        if gcode is None or _type is None:
+            return False
+        if _type != objects.UniqueIds.T_GRP:
+            return False
+        self.load_next_request(GroupMembersRequest(gcode))
+        return True

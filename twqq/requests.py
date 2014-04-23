@@ -247,8 +247,9 @@ class FriendListRequest(WebQQRequest):
     url = "http://s.web2.qq.com/api/get_user_friends2"
     method = WebQQRequest.METHOD_POST
 
-    def init(self, first=True):
+    def init(self, first=True, manual=False):
         self.is_first = first
+        self.manual = False
         self.params = [("r", json.dumps({"h": "hello",
                                          "hash": self.hub._hash(),
                                          "vfwebqq": self.hub.vfwebqq}))]
@@ -266,10 +267,14 @@ class FriendListRequest(WebQQRequest):
         friends = self.hub.set_friends(info)
         logger.info("加载好友信息 {0!r}".format(friends))
         logger.info(data)
-        self.hub.load_next_request(GroupListRequest())
+
         self.hub.load_next_request(FriendStatusRequest())
-        self.hub.load_next_request(DiscuListRequest())
-        self.hub.load_next_request(FriendListRequest(delay=3600, first=False))
+
+        if not self.manual:
+            self.hub.load_next_request(GroupListRequest())
+            self.hub.load_next_request(DiscuListRequest())
+            self.hub.load_next_request(FriendListRequest(delay=3600,
+                                                         first=False))
 
 
 FriendInfoRequest = FriendListRequest
