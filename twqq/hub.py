@@ -166,6 +166,7 @@ class RequestHub(object):
             buff.close()
         except:
             logger.warn(u"上传图片错误", exc_info=True)
+            return u"[图片获取失败]"
         return ret
 
     def generate_curl(self, url=None, headers=None):
