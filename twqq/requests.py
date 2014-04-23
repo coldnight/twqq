@@ -301,6 +301,8 @@ class FriendStatusRequest(WebQQRequest):
         if isinstance(data, dict) and data.get("retcode") == 0:
             for item in data.get('result', []):
                 self.hub.get_friends().set_status(**item)
+        else:
+            logger.warn(u"加载好友状态信息失败: {0!r}".format(data))
 
 
 class GroupListRequest(WebQQRequest):
@@ -353,6 +355,8 @@ class GroupMembersRequest(WebQQRequest):
             group = groups.find_group(self._gcode)
             group.set_group_detail(members)
             logger.debug(u"群详细信息: {0}".format(group))
+        else:
+            logger.warn(u"获取群成员信息失败 {0!r}".format(data))
 
         if self._poll:
             self.hub.start_poll()
@@ -555,6 +559,8 @@ class QQNumberRequest(WebQQRequest):
             uin = r.get("uin")
             account = r.get("account")
             self.hub.get_friends().set_account(uin, account)
+        else:
+            logger.warn(u"获取好友QQ号码失败: {0!r}".format(data))
 
 
 class DiscuInfoRequest(WebQQRequest):
