@@ -263,12 +263,15 @@ class FriendListRequest(WebQQRequest):
             logger.error("加载好友信息失败, 重新开始登录")
             return self.hub.load_next_request(FirstRequest())
 
-        info = data.get("result", {})
-        friends = self.hub.set_friends(info)
-        logger.info("加载好友信息 {0!r}".format(friends))
-        logger.info(data)
-
-        self.hub.load_next_request(FriendStatusRequest())
+        if isinstance(data, dict) and data.get("retcode") == 0:
+            info = data.get("result", {})
+            self.hub.set_friends(info)
+            friends = self.hub.get_friends()
+            logger.info(u"加载好友信息 {0!r}".format(friends))
+            logger.debug(data)
+            self.hub.load_next_request(FriendStatusRequest())
+        else:
+            logger.warn(u"加载好友列表失败: {0!r}".format(data))
 
         if not self.manual:
             self.hub.load_next_request(GroupListRequest())
