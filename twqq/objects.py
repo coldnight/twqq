@@ -264,10 +264,10 @@ class GroupList(ObjectsBase):
     def __iter__(self):
         """ 迭代返回群对象
         """
-        if hasattr(dict, "iterkeys"):
-            return self._gcode_map.iterkeys()
+        if hasattr(dict, "itervalues"):
+            return self._gcode_map.itervalues()
         else:
-            return self._gcode_map.keys()
+            return self._gcode_map.values()
 
     @property
     def groups(self):
@@ -317,6 +317,9 @@ class GroupList(ObjectsBase):
         item = self.find_group(gcode)
         if item:
             return item.gid
+
+    def get_gcode(self, gid):
+        return self._gid_gcode_map.get(gid)
 
 
 class DiscuMemInfo(ObjectsBase):
