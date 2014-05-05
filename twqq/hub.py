@@ -466,7 +466,7 @@ class RequestHub(object):
 
         :param uin: 好友uin
         """
-        return self.get_friends().get_show_name()
+        return self.get_friends().get_show_name(uin)
 
     def wrap(self, request, func=None):
         """ 装饰callback
