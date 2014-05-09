@@ -221,7 +221,8 @@ class Login2Request(WebQQRequest):
     def callback(self, resp, data):
         self.hub.require_check_time = None
         if not resp.body or not isinstance(data, dict):
-            logger.error(u"没有获取到数据, 登录失败")
+            logger.error(u"没有获取到数据或数据格式错误, 登录失败:{0}"
+                         .format(resp.body))
             self.hub.load_next_request(FirstRequest())
             return
 
