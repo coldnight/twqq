@@ -288,7 +288,7 @@ class RequestHub(object):
 
     def get_account(self, uin, _type=1):
         """ 获取好友QQ号
-        :param _type: 类型, 1 是好友, 4 是群
+        :param _type: 类型, 1 是好友和讨论组, 4 是群
         """
         # self.load_next_request(QQNumberRequest())
         ret = self.get_friends().get_account(uin)
