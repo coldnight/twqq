@@ -58,7 +58,9 @@ class RequestHub(object):
     """
     SIG_RE = re.compile(r'var g_login_sig=encodeURIComponent\("(.*?)"\);')
 
-    def __init__(self, qid, pwd, client=None, debug=False):
+    def __init__(self, qid, pwd, client=None, debug=False,
+                 handle_msg_image=True):
+        self.handle_msg_image = handle_msg_image
         self.http = TornadoHTTPClient()
         self.http.set_user_agent(
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
@@ -507,11 +509,11 @@ class RequestHub(object):
         for row in contents:
             if isinstance(row, (list)) and len(row) == 2:
                 info = row[1]
-                if row[0] == "offpic":
+                if row[0] == "offpic" and self.handle_msg_image:
                     file_path = info.get("file_path")
                     content += self.get_msg_img(from_uin, file_path)
 
-                if row[0] == "cface":
+                if row[0] == "cface" and self.handle_msg_image:
                     name = info.get("name")
                     key = info.get("key")
                     file_id = info.get("file_id")

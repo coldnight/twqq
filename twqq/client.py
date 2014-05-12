@@ -32,7 +32,7 @@ class WebQQClient(object):
                 # self.msg_disp = MessageDispatch(self)
         self.setup_msg_handlers()
         self.setup_request_handlers()
-        self.hub = RequestHub(qq, pwd, self, debug)
+        self.hub = RequestHub(qq, pwd, self, debug, handle_msg_image=False)
 
     @abstractmethod
     def handle_verify_code(self, path, r, uin):
