@@ -8,6 +8,9 @@
 #
 """ 对应WebQQ的数据结构抽象
 """
+import logging
+
+logger = logging.getLogger("twqq")
 
 
 class UniqueIds(object):
@@ -141,17 +144,29 @@ class Group(ObjectsBase):
 
         for item in data.get("cards", []):
             uin = item.get("muin")
-            self._uin_map[uin].card = item.get("card")
-            self._uin_name_map[item.get("card")] = uin
+            if uin in self._uin_map:
+                self._uin_map[uin].card = item.get("card")
+                self._uin_name_map[item.get("card")] = uin
+            else:
+                logger.warn(u"card info {0} not in map: {1!r}"
+                            .format(uin, item))
 
         for item in data.get("stats", []):
             uin = item.get("uin")
-            self._uin_map[uin].stat = item.get("stat")
-            self._uin_map[uin].client_type = item.get("client_type")
+            if uin in self._uin_map:
+                self._uin_map[uin].stat = item.get("stat")
+                self._uin_map[uin].client_type = item.get("client_type")
+            else:
+                logger.warn(u"stats info {0} not in map: {1!r}"
+                            .format(uin, item))
 
         for item in data.get("vipinfo", []):
             u = item.get("u")
-            self._uin_map[u].vipinfo = item
+            if u in self._uin_map:
+                self._uin_map[u].vipinfo = item
+            else:
+                logger.warn(u"vip info {0} not in map: {1!r}"
+                            .format(uin, item))
 
         self.set_detail_info(**data.get("ginfo", {}))
 
