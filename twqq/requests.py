@@ -360,7 +360,7 @@ class GroupMembersRequest(WebQQRequest):
         self._poll = poll
         self._gcode = gcode
         self.params = [("gcode", gcode), ("vfwebqq", self.hub.vfwebqq),
-                       ("cb", "undefined"), ("t", int(time.time()))]
+                       ("cb", "undefined"), ("t", int(time.time() * 1000))]
         self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
