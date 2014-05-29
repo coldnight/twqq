@@ -14,9 +14,10 @@ import json
 import random
 
 try:
+    from urllib import urlencode
     import urllib
 except ImportError:
-    import urllib.parse as urllib
+    import urllib.parse as urllib  # py3
 
 import logging
 import tempfile

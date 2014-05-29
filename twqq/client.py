@@ -64,7 +64,7 @@ class WebQQClient(object):
         :param send_uin: 发送人的uin
         :param source: 消息原包
         """
-        logger.info(u"获取{0} 群的{1} 发送消息: {2}"
+        logger.info(u"[群消息] {0}: {1} ==> {2}"
                     .format(group_code, member_nick, content))
 
     @buddy_message_handler
@@ -75,7 +75,7 @@ class WebQQClient(object):
         :param content: 内容
         :param source: 消息原包
         """
-        logger.info(u"获取 {0} 发送的好友消息: {1}"
+        logger.info(u"[好友消息] {0} ==> {1}"
                     .format(from_uin, content))
 
     @sess_message_handler
@@ -87,7 +87,7 @@ class WebQQClient(object):
         :param content: 内容
         :param source: 消息原包
         """
-        logger.info(u"获取 {0} 发送的临时消息: {1}"
+        logger.info(u"[临时消息] {0} ==> {1}"
                     .format(from_uin, content))
 
     @discu_message_handler
@@ -99,7 +99,7 @@ class WebQQClient(object):
         :param content: 内容
         :param source: 源消息
         """
-        logger.info(u"获取 {0} 发送的讨论组消息: {1}"
+        logger.info(u"[讨论组消息] {0} ==> {1}"
                     .format(did, content))
 
     @kick_message_handler
@@ -112,7 +112,7 @@ class WebQQClient(object):
     def log_system_message(self, typ, from_uin, account, source):
         """ 记录系统消息日志
         """
-        logger.info("系统消息: 类型:{0}, 发送人:{1}, 发送账号:{2}, 源:{3}"
+        logger.info("[系统消息]: 类型:{0}, 发送人:{1}, 发送账号:{2}, 源:{3}"
                     .format(type, from_uin, account, source))
 
     def setup_msg_handlers(self):

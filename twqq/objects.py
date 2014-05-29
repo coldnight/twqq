@@ -138,13 +138,15 @@ class Group(ObjectsBase):
         """ 设置组详细信息, 包括群成员信息, 等.
         """
         for kw in data.get("minfo", []):
-            tmp = GroupMInfo(**kw)
-            self._uin_name_map[tmp.nick] = tmp.uin
-            self._uin_map[tmp.uin] = tmp
+            nick, uin = kw.get("nick"), kw.get("uin")
+            if nick is not None:
+                tmp = GroupMInfo(**kw)
+                self._uin_name_map[tmp.nick] = tmp.uin
+                self._uin_map[tmp.uin] = tmp
 
         for item in data.get("cards", []):
             uin = item.get("muin")
-            if uin in self._uin_map:
+            if uin in self._uin_map and item.get("card") is not None:
                 self._uin_map[uin].card = item.get("card")
                 self._uin_name_map[item.get("card")] = uin
             else:

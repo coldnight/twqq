@@ -37,6 +37,18 @@ class WebQQRequest(object):
     def handle_exc(self, type, value, trace):
         pass
 
+    def handle_retcode(self, data, msg):
+        if isinstance(data, dict):
+            retcode = data.get("retcode")
+            if retcode == 0:
+                logger.info(u"{0} 成功".format(msg))
+            elif retcode == 8:
+                logger.error(u"{0} 失败, 需要重新登录".format(msg))
+
+            return
+
+        logger.warn(u"{0} 失败 <{1}>".format(msg, data))
+
 
 class LoginSigRequest(WebQQRequest):
     url = "https://ui.ptlogin2.qq.com/cgi-bin/login"
@@ -490,7 +502,8 @@ class SessMsgRequest(WebQQRequest):
                        ("psessionid", self.hub.psessionid))
 
     def callback(self, resp, data):
-        logger.info(u"发送给 {0} 临时消息成功: {1}".format(self.to, data))
+        self.handle_retcode(data, u"[临时消息] {0} ==> {1}"
+                            .format(self.content, self.to))
         self.hub.consume_delay(self.number)
 
 
@@ -519,8 +532,8 @@ class GroupMsgRequest(WebQQRequest):
         self.headers.update(Origin=const.D_ORIGIN, Referer=const.D_REFERER)
 
     def callback(self, resp, data):
-        logger.info(u"发送群消息 {0} 到 {1} 成功: {2}"
-                    .format(self.source, self.group_uin, data))
+        self.handle_retcode(data, u"[群消息] {0} ==> {1}"
+                            .format(self.source, self.group_uin))
         self.hub.consume_delay(self.number)
 
 
@@ -537,34 +550,12 @@ class DiscuListRequest(WebQQRequest):
         self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
-        logger.info(u"获取讨论组列表: {0!r}".format(data))
+        logger.info(u"[群列表] ==> {0!r}".format(data))
         if data.get("retcode") == 0:
             self.hub.set_discu(data.get("result", {}))
             dids = self.hub.get_discu().dids
             for did in dids:
                 self.hub.load_next_request(DiscuInfoRequest(did))
-
-
-class QQNumberRequest(WebQQRequest):
-    """ 查看好友QQ号码
-    """
-    url = "http://s.web2.qq.com/api/get_friend_uin2"
-
-    def init(self, uin):
-        self.params = {"code": "", "t": time.time() * 1000,
-                       "tuin": uin, "type": 0,
-                       "verifysession": "",
-                       "vfwebqq": self.hub.vfwebqq}
-        self.headers.update(Referer=const.S_REFERER)
-
-    def callback(self, response, data):
-        if isinstance(data, dict) and data.get("retcode") == 0:
-            r = data.get('result')
-            uin = r.get("uin")
-            account = r.get("account")
-            self.hub.get_friends().set_account(uin, account)
-        else:
-            logger.warn(u"获取好友QQ号码失败: {0!r}".format(data))
 
 
 class DiscuInfoRequest(WebQQRequest):
@@ -586,7 +577,7 @@ class DiscuInfoRequest(WebQQRequest):
     def callback(self, resp, data):
         if data.get("retcode") == 0:
             discu = self.hub.get_discu()
-            logger.info(u"获取讨论组 {0} 的详细信息: {1}"
+            logger.info(u"[讨论组] ==> {0} 的详细信息: {1}"
                         .format(discu.get_name(self._did), data))
             discu.set_detail(self._did, data.get("result", {}))
 
@@ -614,8 +605,8 @@ class DiscuMsgRequest(WebQQRequest):
         self.headers.update(Referer=const.D_REFERER)
 
     def callback(self, resp, data):
-        logger.info(u"发送讨论组消息 {0} 到 {1} 成功: {2}"
-                    .format(self.source, self.did, data))
+        self.handle_retcode(data, u"[讨论组消息] {0} ==> {1}"
+                            .format(self.source, self.did))
         self.hub.consume_delay(self.number)
 
 
@@ -645,9 +636,8 @@ class BuddyMsgRequest(WebQQRequest):
         self.delay, self.number = self.hub.get_delay(content)
 
     def callback(self, resp, data):
-        logger.info(u"发送好友消息 {0} 给 {1} 成功: {2}"
-                    .format(self.source, self.to_uin, data))
-
+        self.handle_retcode(data, u"[好友消息] {0} ==> {1}"
+                            .format(self.source, self.to_uin))
         self.hub.consume_delay(self.number)
 
 
@@ -667,7 +657,7 @@ class SetSignatureRequest(WebQQRequest):
         self.headers.update(Referer=const.S_REFERER)
 
     def callback(self, resp, data):
-        logger.info(u"设置签名成功: {0}".format(data))
+        logger.info(u"[设置签名] {0}".format(data))
 
 
 class AcceptVerifyRequest(WebQQRequest):
@@ -692,11 +682,11 @@ class AcceptVerifyRequest(WebQQRequest):
 
     def callback(self, resp, data):
         if data.get("retcode") == 0:
-            logger.info(u"添加 {0} 成功".format(self.qq_num))
+            logger.info(u"[好友添加] 添加 {0} 成功".format(self.qq_num))
             # if self.markname:
             #     self.hub.mark_to_uin[self.markname] = self.uin
         else:
-            logger.info(u"添加 {0} 失败".format(self.qq_num))
+            logger.info(u"[好友添加] 添加 {0} 失败".format(self.qq_num))
 
 
 class FileRequest(WebQQRequest):
