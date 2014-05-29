@@ -134,6 +134,10 @@ class Group(ObjectsBase):
         self._uin_name_map = {}  # 群成员昵称到uin的映射
         self._id = UniqueIds.alloc(code, UniqueIds.T_GRP)
 
+    def update(self, **kw):
+        for key, val in kw.items():
+            setattr(self, key, val)
+
     def set_group_detail(self, data):
         """ 设置组详细信息, 包括群成员信息, 等.
         """
@@ -262,18 +266,23 @@ class GroupList(ObjectsBase):
         self._gcode_map = {}
         self._gid_gcode_map = {}
         self._gcode_name_map = {}
+        self.update(data)
+
+    def update(self, data):
         for kw in data.get("gnamelist", []):
-            group = Group(**kw)
             gcode = kw.get("code")
-            self._gcode_map[gcode] = group
-            self._gid_gcode_map[kw.get("gid")] = gcode
-            self._gcode_name_map[kw.get("name")] = gcode
+            if gcode not in self._gcode_map:
+                group = Group(**kw)
+                self._gcode_map[gcode] = group
+                self._gid_gcode_map[kw.get("gid")] = gcode
+                self._gcode_name_map[kw.get("name")] = gcode
+            else:
+                self._gcode_map[gcode].update(**kw)
         self.gmasklist = data.get("gmasklist", [])
-        self.gnamelist = [Group(**kw) for kw in data.get("gnamelist", [])]
         self.gmarklist = data.get("gmarklist", [])
 
     def __repr__(self):
-        return str([x.name for x in self.gnamelist])
+        return str([x.name for x in self._gcode_map.values()])
 
     def __unicode__(self):
         return self.__repr__().decode("utf-8")
@@ -291,7 +300,7 @@ class GroupList(ObjectsBase):
         return [x for x in self._gcode_map.values()]
 
     def get_gcodes(self):
-        return [x.code for x in self.gnamelist]
+        return [x.code for x in self._gcode_map.values()]
 
     def find_group(self, gcode):
         return self._gcode_map.get(gcode)
@@ -401,9 +410,18 @@ class DiscuList(ObjectsBase):
     def __init__(self, data):
         self._did_map = {}
         self._did_name_map = {}
+
+        self.update(data)
+
+    def update(self, data):
         for item in data.get("dnamelist"):
-            self._did_name_map[item["name"]] = item["did"]
-            self._did_map[item["did"]] = Discu(item["did"], item["name"])
+            did = item["did"]
+            if did not in self._did_map:
+                self._did_name_map[item["name"]] = item["did"]
+                self._did_map[did] = Discu(item["did"], item["name"])
+            else:
+                self._did_map[did].did = did
+                self._did_map[did].name = item["name"]
 
     @property
     def dids(self):
@@ -496,6 +514,10 @@ class FriendInfo(ObjectsBase):
         self.account = account
         self._id = UniqueIds.alloc(uin, UniqueIds.T_FRI)
 
+    def update(self, **kwargs):
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
     def set_markname(self, markname):
         self.markname = markname
 
@@ -528,11 +550,17 @@ class Friends(ObjectsBase):
         self._uin_map = {}
         self._name_map = {}
         self._mark_uin_map = {}
+        self.update(data)
 
+    def update(self, data):
         for item in data.get("info", {}):
-            info = FriendInfo(**item)
-            self._uin_map[info.uin] = info
-            self._name_map[info.nick] = info.uin
+            uin = item["uin"]
+            if uin not in self._uin_map:
+                info = FriendInfo(**item)
+                self._uin_map[info.uin] = info
+                self._name_map[info.nick] = info.uin
+            else:
+                self._uin_map[uin].update(**item)
 
         for item in data.get("friends", []):
             uin = item.get("uin")

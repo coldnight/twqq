@@ -266,19 +266,28 @@ class RequestHub(object):
     def set_friends(self, data):
         """ 存储好友信息
         """
-        self._friends = objects.Friends(data)
+        if not hasattr(self, "_friends"):
+            self._friends = objects.Friends(data)
+        else:
+            self._friends.update(data)
 
     def get_friends(self):
         return self._friends if hasattr(self, "_friends") else None
 
     def set_groups(self, data):
-        self._groups = objects.GroupList(data)
+        if not hasattr(self, "_groups"):
+            self._groups = objects.GroupList(data)
+        else:
+            self._groups.update(data)
 
     def get_groups(self):
         return self._groups if hasattr(self, "_groups") else None
 
     def set_discu(self, data):
-        self._discu = objects.DiscuList(data)
+        if not hasattr(self, "_discu"):
+            self._discu = objects.DiscuList(data)
+        else:
+            self._discu.update(data)
 
     def get_discu(self):
         return self._discu if hasattr(self, "_discu") else None
