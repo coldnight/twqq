@@ -281,6 +281,10 @@ class GroupList(ObjectsBase):
         self.gmasklist = data.get("gmasklist", [])
         self.gmarklist = data.get("gmarklist", [])
 
+    @property
+    def gnamelist(self):
+        return self._gcode_map.values()
+
     def __repr__(self):
         return str([x.name for x in self._gcode_map.values()])
 
