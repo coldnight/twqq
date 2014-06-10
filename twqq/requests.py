@@ -13,7 +13,7 @@ import random
 import inspect
 import logging
 
-import const
+from . import const
 
 logger = logging.getLogger("twqq")
 
@@ -70,7 +70,7 @@ class LoginSigRequest(WebQQRequest):
             logger.warn(u"没有获取到 Login Sig, 重新获取")
             return self.hub.load_next_request(self)
 
-        sigs = self.hub.SIG_RE.findall(resp.body)
+        sigs = self.hub.SIG_RE.findall(str(resp.body))
         if len(sigs) == 1:
             self.hub.login_sig = sigs[0]
             logger.info(u"获取Login Sig: {0}".format(self.hub.login_sig))
@@ -93,7 +93,8 @@ class CheckRequest(WebQQRequest):
         self.headers.update({"Referer": const.CHECK_REFERER})
 
     def callback(self, resp, data):
-        r, vcode, uin = eval("self.hub." + data.strip().rstrip(";"))
+        logger.info(u"检查验证码返回: {}".format(data))
+        r, vcode, uin = eval(b"self.hub." + data.strip().rstrip(b";"))[:3]
         logger.debug("R:{0} vcode:{1}".format(r, vcode))
         self.hub.clean()
         if int(r) == 0:
@@ -132,10 +133,15 @@ class BeforeLoginRequest(WebQQRequest):
     url = "https://ssl.ptlogin2.qq.com/login"
 
     def init(self, password):
+        if isinstance(self.hub.check_code, bytes):   # py3
+            vcode = self.hub.check_code.decode('utf-8')
+        else:
+            vcode = self.hub_check_code
+
         self.hub.unwait()
         self.hub.lock()
         self.params = [("u", self.hub.qid), ("p", password),
-                       ("verifycode", self.hub.check_code),
+                       ("verifycode", vcode),
                        ("webqq_type", 10), ("remember_uin", 1),
                        ("login2qq", 1),
                        ("aid", self.hub.aid), ("u1", const.BLOGIN_U1),
@@ -174,7 +180,9 @@ class BeforeLoginRequest(WebQQRequest):
             logger.error(msg)
             return False, self.hub.load_next_request(CheckRequest())
         else:
-            logger.error(u"server response: {0}".format(msg.decode('utf-8')))
+            if isinstance(msg, bytes):
+                msg = msg.decode('utf-8')
+            logger.error(u"server response: {0}".format(msg))
             return False, self.hub.load_next_request(CheckRequest())
 
         if nickname:

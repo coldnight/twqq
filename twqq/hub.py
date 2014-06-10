@@ -6,6 +6,7 @@
 #   Date    :   13/11/14 13:14:54
 #   Desc    :   请求中间件
 #
+from __future__ import absolute_import
 import re
 import os
 import time
@@ -43,9 +44,9 @@ from .requests import FirstRequest, Login2Request, DiscuMsgRequest
 from .requests import FileRequest, LogoutRequset, FriendListRequest
 from .requests import GroupMembersRequest
 
-import _hash
-import const
-import objects
+from . import _hash
+from . import const
+from . import objects
 
 logger = logging.getLogger("twqq")
 
@@ -88,7 +89,7 @@ class RequestHub(object):
         self.stop_poll = False
 
         # 检查是否验证码的回调
-        self.ptui_checkVC = lambda r, v, u: (r, v, u)
+        self.ptui_checkVC = lambda *r: r
 
         # 是否需要验证码
         self.require_check = None
@@ -149,8 +150,17 @@ class RequestHub(object):
 
     def handle_pwd(self, r, vcode, huin):
         """ 根据检查返回结果,调用回调生成密码和保存验证码 """
+        if not isinstance(vcode, bytes):
+            vcode = vcode.encode('utf-8')
+
+        if not isinstance(self.__pwd, bytes):
+            self.__pwd = self.__pwd.encode("utf-8")
+
+        if not isinstance(huin, bytes):
+            huin = huin.encode('utf-8')
+
         pwd = md5(md5(self.__pwd).digest() + huin).hexdigest().upper()
-        pwd = md5(pwd + vcode).hexdigest().upper()
+        pwd = md5(pwd.encode('utf-8') + vcode).hexdigest().upper()
         return pwd
 
     def upload_file(self, path):
