@@ -337,7 +337,9 @@ class GroupListRequest(WebQQRequest):
     method = WebQQRequest.METHOD_POST
 
     def init(self):
-        self.params = {"r": json.dumps({"vfwebqq": self.hub.vfwebqq})}
+        self.params = {"r": json.dumps({"vfwebqq": self.hub.vfwebqq,
+                                        "hash": self.hub._hash(),
+                                        })}
         self.headers.update(Origin=const.S_ORIGIN)
         self.headers.update(Referer=const.S_REFERER)
         logger.info("获取群列表")
