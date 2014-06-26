@@ -7,6 +7,7 @@
 #   Desc    :
 #
 import os
+import sys
 import json
 import time
 import random
@@ -93,6 +94,9 @@ class CheckRequest(WebQQRequest):
         self.headers.update({"Referer": const.CHECK_REFERER})
 
     def callback(self, resp, data):
+        if data is None:
+            logger.warn("检查验证码, 没有返回数据. 退出, 请尝试重启程序")
+            sys.exit(-1)
         logger.info(u"检查验证码返回: {}".format(data))
         r, vcode, uin = eval(b"self.hub." + data.strip().rstrip(b";"))[:3]
         logger.debug("R:{0} vcode:{1}".format(r, vcode))
@@ -169,13 +173,12 @@ class BeforeLoginRequest(WebQQRequest):
         self.hub.unlock()
         if int(scode) == 0:
             logger.info("从Cookie中获取ptwebqq的值")
-            old_value = self.hub.ptwebqq
             try:
                 val = self.hub.http.cookie['.qq.com']['/']['ptwebqq'].value
                 self.hub.ptwebqq = val
             except:
-                logger.error("从Cookie中获取ptwebqq的值失败, 使用旧值尝试")
-                self.hub.ptwebqq = old_value
+                logger.error("从Cookie中获取ptwebqq的值失败, 退出..")
+                sys.exit(-1)
         elif int(scode) == 4:
             logger.error(msg)
             return False, self.hub.load_next_request(CheckRequest())
