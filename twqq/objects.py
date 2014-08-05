@@ -572,8 +572,11 @@ class Friends(ObjectsBase):
 
         for item in data.get("marknames", []):
             uin = item.get("uin")
-            self._uin_map[uin].set_markname(item.get("markname"))
-            self._mark_uin_map[item.get("markname")] = uin
+            try:
+                self._uin_map[uin].set_markname(item.get("markname"))
+                self._mark_uin_map[item.get("markname")] = uin
+            except KeyError:
+                pass
 
         for item in data.get("vipinfo", []):
             uin = item.get("u")
