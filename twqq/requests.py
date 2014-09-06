@@ -97,7 +97,7 @@ class CheckRequest(WebQQRequest):
         if data is None:
             logger.warn("检查验证码, 没有返回数据. 退出, 请尝试重启程序")
             sys.exit(-1)
-        logger.info(u"检查验证码返回: {}".format(data))
+        logger.info(u"检查验证码返回: {0}".format(data))
         r, vcode, uin = eval(b"self.hub." + data.strip().rstrip(b";"))[:3]
         logger.debug("R:{0} vcode:{1}".format(r, vcode))
         self.hub.clean()
