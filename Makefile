@@ -1,6 +1,6 @@
 PACKAGE = windmvc/
 DOCPATH = doc
-PYTHONBIN = python
+PYTHONBIN = python2
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -17,13 +17,13 @@ doc:
 
 html:
 	$(PYTHONBIN) setup.py install
-	cd docs && make html && cd ..
+	cd $(DOCPATH) && make html && cd ..
 
 htmldoc:
 	$(PYTHONBIN) setup.py install
-	rm -rf docs/*
+	rm -rf $(DOCPATH)/*
 	sphinx-apidoc -F -o $(DOCPATH) $(PACKAGE)
-	cd docs && make html && cd ..
+	cd $(DOCPATH)  && make html && cd ..
 
 dist:
 	$(PYTHONBIN) setup.py register sdist upload && rm -rf *.egg_info build dist
